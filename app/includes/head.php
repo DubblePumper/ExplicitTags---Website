@@ -30,32 +30,44 @@
     <!-- Title of the document -->
     <title>ExplicitTags</title>
 
+    <!-- AOS Animation CDN -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+
+
     <!-- tailwindCSS -->
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <script>
-        tailwind.config = {
-            theme: {
-                colors: {
-                    'primairy': '#12143a',
-                    'secondary': '#40a6ea',
-                    'tertery': '#40a6ea',
-                    'white': '#e0e0e0',
-                    'text-dark': '#333333',
-                    'background-dark': '#222222'
-                },
-                fontFamily: {
-                    sans: ['Helvetica', 'Roboto', 'sans-serif']
-                },
-            }
-        }
-    </script>
 
     <style type="text/tailwindcss">
 
     </style>
 
-    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp,container-queries"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,container-queries"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        transparent: 'transparent',
+                        current: 'currentColor',
+                        'primairy': '#12143a',
+                        'secondary': '#40a6ea',
+                        'tertery': '#9d65ea',
+                        'white': '#e0e0e0',
+                        'TextWhite': '#e0e0e0',
+                        'BgDark': '#222222',
+                    },
+                    fontFamily: {
+                        'sans': ['Helvetica', 'Roboto', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Jquery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
     <!-- Stylesheets and fonts -->
     <link rel="stylesheet" type="text/css" href="/assets/css/style.css">
