@@ -6,4 +6,10 @@ RUN apt-get update && apt-get upgrade -y
 RUN a2enmod rewrite
 RUN sed -i 's/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf
 
-EXPOSE 9906 3306
+# Set the document root to /var/www/html
+RUN sed -i 's|DocumentRoot /var/www/html|DocumentRoot /var/www/html|' /etc/apache2/sites-available/000-default.conf
+
+# Set the ServerName directive globally
+RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
+
+EXPOSE 80

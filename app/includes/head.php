@@ -58,7 +58,7 @@
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp,container-queries"></script>
 
     <!-- Stylesheets and fonts -->
-    <link rel="stylesheet" type="text/css" href="assets/css/style.css">
+    <link rel="stylesheet" type="text/css" href="/assets/css/style.css">
     <link href="https://fonts.googleapis.com/css?family=Helvetica|Roboto" rel="stylesheet">
 
     <!-- Favicon links -->
@@ -70,7 +70,4 @@
     <meta name="theme-color" content="#ffffff">
     <meta name="msapplication-TileColor" content="#ffffff">
     <meta name="msapplication-TileImage" content="/assets/images/icons/mstile-144x144.png">
-
-
-
 </head>
