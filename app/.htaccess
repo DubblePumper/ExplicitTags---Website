@@ -5,6 +5,10 @@ RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_FILENAME}\.(php|html|htm|jpg|jpeg|png|gif|svg|ico) -f
 RewriteRule ^(.*)$ $1 [L]
 
+# Map requests from /pages to the root directory
+RewriteCond %{REQUEST_URI} !^/pages/
+RewriteRule ^([^/]+)$ pages/$1 [L]
+
 # Map requests without file extensions to corresponding PHP, HTML, HTM, and image files
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_FILENAME} !-f
