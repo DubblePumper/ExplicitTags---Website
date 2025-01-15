@@ -54,6 +54,7 @@
                         'primairy': '#12143a',
                         'secondary': '#40a6ea',
                         'tertery': '#9d65ea',
+                        'darkPrimairy': '#0d0d0d',
                         'white': '#e0e0e0',
                         'TextWhite': '#e0e0e0',
                         'BgDark': '#222222',

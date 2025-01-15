@@ -1,12 +1,18 @@
 RewriteEngine On
 
+# Handle index path
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^index$ index.php [L]
+
 # Remove file extensions from URLs
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteCond %{REQUEST_FILENAME}\.(php|html|htm|jpg|jpeg|png|gif|svg|ico) -f
+RewriteCond %{REQUEST_FILENAME}\.(php|html|htm) -f
 RewriteRule ^(.*)$ $1 [L]
 
 # Map requests from /pages to the root directory
-RewriteCond %{REQUEST_URI} !^/pages/
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^([^/]+)$ pages/$1 [L]
 
 # Map requests without file extensions to corresponding PHP, HTML, HTM, and image files
@@ -15,5 +21,5 @@ RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^([^\.]+)$ $1.php [L]
 
 # Redirect to remove file extensions in the URL
-RewriteCond %{THE_REQUEST} ^[A-Z]{3,}\s([^.]+)\.(php|html|htm|jpg|jpeg|png|gif|svg|ico) [NC]
+RewriteCond %{THE_REQUEST} ^[A-Z]{3,}\s([^.]+)\.(php|html|htm) [NC]
 RewriteRule ^ %1 [R=301,L]

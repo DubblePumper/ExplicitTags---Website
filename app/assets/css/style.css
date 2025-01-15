@@ -6,3 +6,10 @@ body {
 background: #222222;
 background: radial-gradient(at center top, #222222, #12153A);
 }
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
