@@ -4,28 +4,10 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/include-all.php';
 $gradients = getRandomGradientClass(true);
 ?>
 
-<style>
-    .icon {
-        width: 40.70644mm;
-        height: 84.606247mm;
-    }
-    .image-container {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 10px;
-        height: 150px; /* Set a fixed height */
-        overflow-y: auto; /* Add scroll if content overflows */
-    }
-    .image-container img {
-        flex: 1 1 calc(33.333% - 10px);
-        max-width: calc(33.333% - 10px);
-    }
-</style>
 
 <body class="text-TextWhite">
     <header>
-        <div class="mt-10 flex flex-col items-center justify-center space-y-2" data-aos="fade-down" data-aos-duration="1000">
+        <div class="text-center mt-10 flex flex-col items-center justify-center space-y-2" data-aos="fade-down" data-aos-duration="1000">
             <h1 class="text-4xl font-bold <?php echo $gradients ?>" data-aos="fade-down" data-aos-duration="1000">Customize your experience.</h1>
             <h2 class="<?php echo $gradients; ?>" data-aos="fade-down" data-aos-duration="1000">Select what you want to find</h2>
             <h3 class="<?php echo $gradients; ?>" data-aos="fade-down" data-aos-duration="1000">And guess what... We will find it for you</h3>
@@ -43,7 +25,7 @@ $gradients = getRandomGradientClass(true);
             <div class="grid grid-cols-1 gap-4 h-96">
                 <!-- question 1 -->
                 <div class="question active transition-opacity duration-500 ease-in-out opacity-100 h-full" id="question1">
-                    <div class="flex flex-col items-center space-y-1 mb-12" data-aos="zoom-in" data-aos-duration="1000">
+                    <div class="text-center flex flex-col items-center space-y-1 mb-12" data-aos="zoom-in" data-aos-duration="1000">
                         <h3 class="<?php echo $gradients; ?>">First question</h3>
                         <h2 class="<?php echo $gradients; ?> ">Are you a person <span class="underline underline-offset-4 decoration-solid decoration-secondary font-extrabold text-lg ">with</span> or <span class="underline underline-offset-4 decoration-solid decoration-secondary font-extrabold text-lg">without</span> a penis</h2>
                     </div>
@@ -68,57 +50,30 @@ $gradients = getRandomGradientClass(true);
                 <div class="question transition-opacity duration-500 ease-in-out opacity-0 hidden h-full" id="question2">
                     <div class="flex flex-col items-center space-y-1 mb-12" data-aos="zoom-in" data-aos-duration="1000">
                         <h3 class="<?php echo $gradients; ?>">Second question</h3>
-                        <h2 class="<?php echo $gradients; ?>">How many people need to be involved?</h2>
+                        <h2 class="<?php echo $gradients; ?>">How many people need to be involved in total?</h2>
                     </div>
-                    <div class="flex flex-row items-center justify-around gap-x-4">
+                    <div class="flex flex-row items-center justify-around gap-x-4 w-full">
                         <div class="text-center" id="howMuchMan" data-aos="zoom-in" data-aos-duration="1000">
                             <p class="mb-3">People <span class="underline underline-offset-4 decoration-solid decoration-secondary font-extrabold text-lg ">with</span> a penis</p>
-                            <button type="button" class="rounded-full border-2 border-secondaryDarker py-3 px-5 hover:bg-secondaryDarker hover:border-primairy hover:border-2 hover:text-gray-950 transition duration-500 ease-in-out" onclick="decrement('manCount')">-</button>
-                            <input type="number" id="manCount" name="manCount" value="1" min="0" class="text-TextWhite mx-3 w-9 text-center bg-transparent border-transparent focus:border-0 focus:outline-none focus:ring-0 active:bg-transparent focus-within:bg-transparent">
-                            <button type="button" class="rounded-full border-2 border-secondaryDarker py-3 px-5 hover:bg-secondaryDarker hover:border-primairy hover:border-2 hover:text-gray-950 transition duration-500 ease-in-out" onclick="increment('manCount')">+</button>
-                            <div id="manCountImages" class="image-container"></div>
+                            <button id="minButtonMan" type="button" class="rounded-full border-2 border-secondaryDarker py-3 px-5 hover:bg-secondaryDarker hover:border-primairy hover:border-2 hover:text-gray-950 transition duration-500 ease-in-out" onclick="decrement('manCount')">-</button>
+                            <input type="number" id="manCount" name="manCount" value="1" min="0" max="99" class="text-TextWhite mx-3 w-11 text-center bg-transparent border-transparent focus:border-0 focus:outline-none focus:ring-0 active:bg-transparent focus-within:bg-transparent">
+                            <button
+                                type="button"
+                                id="plusButtonMan"
+                                class="rounded-full border-2 border-secondaryDarker py-3 px-5 hover:bg-secondaryDarker hover:border-primairy hover:border-2 hover:text-gray-950 transition duration-500 ease-in-out"
+                                onclick="increment('manCount','manCountPlus')">+</button>
                         </div>
                         <div class="text-center" id="howMuchWoman" data-aos="zoom-in" data-aos-duration="1000">
                             <p class="mb-3">People <span class="underline underline-offset-4 decoration-solid decoration-secondary font-extrabold text-lg ">without</span> a penis</p>
-                            <button type="button" class="rounded-full border-2 border-secondaryDarker py-3 px-5 hover:bg-secondaryDarker hover:border-primairy hover-border-2 hover:text-gray-950 transition duration-500 ease-in-out" onclick="decrement('womanCount')">-</button>
-                            <input type="number" id="womanCount" name="womanCount" value="1" min="0" class="text-TextWhite mx-3 w-9 text-center bg-transparent border-transparent focus:border-0 focus:outline-none focus:ring-0 active:bg-transparent focus-within:bg-transparent">
-                            <button type="button" class="rounded-full border-2 border-secondaryDarker py-3 px-5 hover:bg-secondaryDarker hover-border-primairy hover-border-2 hover:text-gray-950 transition duration-500 ease-in-out" onclick="increment('womanCount')">+</button>
-                            <div id="womanCountImages" class="image-container"></div>
+                            <button id="minButtonWoman" type="button" class="rounded-full border-2 border-secondaryDarker py-3 px-5 hover:bg-secondaryDarker hover:border-primairy hover:border-2 hover:text-gray-950 transition duration-500 ease-in-out" onclick="decrement('womanCount')">-</button>
+                            <input type="number" id="womanCount" name="womanCount" value="1" min="0" max="99" class="text-TextWhite mx-3 w-11 text-center bg-transparent border-transparent focus:border-0 focus:outline-none focus:ring-0 active:bg-transparent focus-within:bg-transparent">
+                            <button
+                                type="button"
+                                id="plusButtonWoman"
+                                class="rounded-full border-2 border-secondaryDarker py-3 px-5 hover:bg-secondaryDarker hover:border-primairy hover:border-2 hover:text-gray-950 transition duration-500 ease-in-out"
+                                onclick="increment('womanCount','womanCountPlus')">+</button>
                         </div>
                     </div>
-
-                    <script>
-                        function increment(id) {
-                            const input = document.getElementById(id);
-                            input.value = parseInt(input.value) + 1;
-                            updateImages(id);
-                        }
-
-                        function decrement(id) {
-                            const input = document.getElementById(id);
-                            if (input.value > 0) {
-                                input.value = parseInt(input.value) - 1;
-                                updateImages(id);
-                            }
-                        }
-
-                        function updateImages(id) {
-                            const container = document.getElementById(id + 'Images');
-                            const count = parseInt(document.getElementById(id).value);
-                            container.innerHTML = '';
-                            for (let i = 0; i < count; i++) {
-                                const img = document.createElement('img');
-                                img.src = id === 'manCount' ? '/assets/images/website_Images/man_front.svg' : '/assets/images/website_Images/woman_front.svg';
-                                img.classList.add('cursor-pointer', 'mt-4', 'w-24', 'h-24');
-                                container.appendChild(img);
-                            }
-                        }
-
-                        document.addEventListener('DOMContentLoaded', () => {
-                            updateImages('manCount');
-                            updateImages('womanCount');
-                        });
-                    </script>
                 </div>
                 <!-- Add more questions here -->
             </div>
@@ -188,5 +143,76 @@ $gradients = getRandomGradientClass(true);
         }
 
         showQuestion(currentQuestion);
+
+        // -----------------------------------
+        // Question 2
+        // -----------------------------------
+
+        // 1. Declare manCount and womanCount before using them
+        let manCount = document.getElementById('manCount');
+        let womanCount = document.getElementById('womanCount');
+
+        // define global min/max values
+        let manMin = parseInt(manCount.getAttribute('min'));
+        let manMax = parseInt(manCount.getAttribute('max'));
+        let womanMin = parseInt(womanCount.getAttribute('min'));
+        let womanMax = parseInt(womanCount.getAttribute('max'));
+
+        // fix button references
+        let plusBtnMan = document.getElementById('plusButtonMan');
+        let minBtnMan = document.getElementById('minButtonMan');
+        let plusBtnWoman = document.getElementById('plusButtonWoman');
+        let minBtnWoman = document.getElementById('minButtonWoman');
+
+        // 2. Then add event listeners
+        manCount.addEventListener('change', function() {
+            updateButtonState(manCount, manMin, manMax, minBtnMan, plusBtnMan);
+        });
+
+        womanCount.addEventListener('change', function() {
+            updateButtonState(womanCount, womanMin, womanMax, minBtnWoman, plusBtnWoman);
+        });
+
+        function updateButtonState(input, minVal, maxVal, minBtn, plusBtn) {
+            let value = parseInt(input.value);
+            if (value >= maxVal) {
+                plusBtn.disabled = true;
+                plusBtn.classList.add('opacity-50', 'pointer-events-none');
+                input.value = maxVal;
+            } else {
+                plusBtn.disabled = false;
+                plusBtn.classList.remove('opacity-50', 'pointer-events-none');
+            }
+
+            if (value <= minVal) {
+                minBtn.disabled = true;
+                minBtn.classList.add('opacity-50', 'pointer-events-none');
+                input.value = minVal;
+            } else {
+                minBtn.disabled = false;
+                minBtn.classList.remove('opacity-50', 'pointer-events-none');
+            }
+        }
+
+        function increment(id) {
+            let input = document.getElementById(id);
+            let maxVal = (id === 'manCount') ? manMax : womanMax;
+            if (parseInt(input.value) < maxVal) {
+                input.value = parseInt(input.value) + 1;
+                input.dispatchEvent(new Event('change')); // Trigger change event
+            } else if (parseInt(input.value) === maxVal) {
+                input.value = maxVal;
+                input.dispatchEvent(new Event('change')); // Trigger change event
+            }
+        }
+
+        function decrement(id) {
+            let input = document.getElementById(id);
+            let minVal = (id === 'manCount') ? manMin : womanMin;
+            if (parseInt(input.value) > minVal) {
+                input.value = parseInt(input.value) - 1;
+                input.dispatchEvent(new Event('change')); // Trigger change event
+            }
+        }
     </script>
 </body>
