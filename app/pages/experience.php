@@ -4,7 +4,6 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/include-all.php';
 $gradients = getRandomGradientClass(true);
 ?>
 
-
 <body class="text-TextWhite">
     <header>
         <div class="text-center mt-10 flex flex-col items-center justify-center space-y-2" data-aos="fade-down" data-aos-duration="1000">
@@ -15,7 +14,7 @@ $gradients = getRandomGradientClass(true);
     </header>
     <main>
         <form class="grid grid-cols-3 gap-5 mt-20 w-full" id="experienceForm">
-            <div class="flex flex-col items-center justify-center space-y-4" data-aos="fade-right" data-aos-duration="1000">
+            <div class="flex flex-col self-center justify-self-center items-center justify-center space-y-4 aos-init aos-animate w-fit h-fit" data-aos="fade-right" data-aos-duration="1000">
                 <button type="button" class="rounded-full border-2 border-secondary p-5 hover:bg-secondary hover:border-primairy hover:border-2 hover:text-gray-950 transition duration-500 ease-in-out" onclick="prevQuestion()">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
@@ -83,7 +82,7 @@ $gradients = getRandomGradientClass(true);
                 </div>
                 <!-- Add more questions here -->
             </div>
-            <div class="flex flex-col items-center justify-center space-y-4" data-aos="fade-left" data-aos-duration="1000">
+            <div class="flex flex-col self-center justify-self-center items-center justify-center space-y-4 aos-init aos-animate w-fit h-fit" data-aos="fade-left" data-aos-duration="1000">
                 <button type="button" class="rounded-full border-2 border-secondary p-5 hover:bg-secondary hover:border-primairy hover:border-2 hover:text-gray-950 transition duration-500 ease-in-out" onclick="nextQuestion()">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
                         <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
@@ -183,28 +182,38 @@ $gradients = getRandomGradientClass(true);
         manCount.addEventListener('change', function() {
             updateButtonState(manCount, manMin, manMax, minBtnMan, plusBtnMan);
 
-            let value = manCount.value;
+            let value = parseInt(manCount.value);
+            let manImages = manIMG.querySelectorAll('img').length;
 
-            // check if value is increased
-            if (value > manCountValue) {
+            // Ensure the number of images matches the input value
+            while (manImages < value) {
                 addImage(manIMG, '/assets/images/website_Images/man_front.svg', 'man-front');
-            } else {
-                manIMG.removeChild(manIMG.lastChild);
+                manImages++;
             }
+            while (manImages > value) {
+                manIMG.removeChild(manIMG.lastChild);
+                manImages--;
+            }
+
             manCountValue = value;
         });
 
         womanCount.addEventListener('change', function() {
             updateButtonState(womanCount, womanMin, womanMax, minBtnWoman, plusBtnWoman);
 
-            let value = womanCount.value;
+            let value = parseInt(womanCount.value);
+            let womanImages = womanIMG.querySelectorAll('img').length;
 
-            // check if value is increased
-            if (value > womanCountValue) {
+            // Ensure the number of images matches the input value
+            while (womanImages < value) {
                 addImage(womanIMG, '/assets/images/website_Images/woman_front.svg', 'woman-front');
-            } else {
-                womanIMG.removeChild(womanIMG.lastChild);
+                womanImages++;
             }
+            while (womanImages > value) {
+                womanIMG.removeChild(womanIMG.lastChild);
+                womanImages--;
+            }
+
             womanCountValue = value;
         });
 
