@@ -52,30 +52,30 @@ $gradients = getRandomGradientClass(true);
                         <h3 class="<?php echo $gradients; ?>">Second question</h3>
                         <h2 class="<?php echo $gradients; ?>">How many people need to be involved in total?</h2>
                     </div>
-                    <div class="flex flex-row justify-around gap-x-4 w-full">
-                        <div class="flex flex-col text-center" id="howMuchMan" data-aos="zoom-in" data-aos-duration="1000">
-                            <div class="self-start">
+                    <div class="flex flex-row justify-evenly gap-x-4 w-full">
+                        <div class="flex flex-col text-center items-center" id="howMuchMan" data-aos="zoom-in" data-aos-duration="1000">
+                            <div class="self-center">
                                 <p class="mb-3">People <span class="underline underline-offset-4 decoration-solid decoration-secondary font-extrabold text-lg ">with</span> a penis</p>
-                                <button id="minButtonMan" type="button" class="rounded-full border-2 border-secondaryDarker py-3 px-5 hover:bg-secondaryDarker hover:border-primairy hover:border-2 hover:text-gray-950 transition duration-500 ease-in-out" onclick="decrement('manCount')">-</button>
-                                <input type="number" id="manCount" name="manCount" value="1" min="0" max="99" class="text-TextWhite mx-3 w-11 text-center bg-transparent border-transparent focus:border-0 focus:outline-none focus:ring-0 active:bg-transparent focus-within:bg-transparent">
-                                <button type="button" id="plusButtonMan" class="rounded-full border-2 border-secondaryDarker py-3 px-5 hover:bg-secondaryDarker hover:border-primairy hover:border-2 hover:text-gray-950 transition duration-500 ease-in-out" onclick="increment('manCount','manCountPlus')">+</button>
+                                <div class="flex items-center justify-center space-x-2">
+                                    <button id="minButtonMan" type="button" class="rounded-full border-2 border-secondaryDarker py-3 px-5 hover:bg-secondaryDarker hover:border-primairy hover:border-2 hover:text-gray-950 transition duration-500 ease-in-out" onclick="decrement('manCount')">-</button>
+                                    <input type="number" id="manCount" name="manCount" value="1" min="0" max="99" class="text-TextWhite mx-3 w-11 text-center bg-transparent border-transparent focus:border-0 focus:outline-none focus:ring-0 active:bg-transparent focus-within:bg-transparent">
+                                    <button type="button" id="plusButtonMan" class="rounded-full border-2 border-secondaryDarker py-3 px-5 hover:bg-secondaryDarker hover:border-primairy hover:border-2 hover:text-gray-950 transition duration-500 ease-in-out" onclick="increment('manCount','manCountPlus')">+</button>
+                                </div>
                             </div>
-                            <div id="manIMG" class="flex flex-wrap items-center justify-center gap-4">
+                            <div id="manIMG" class="grid grid-cols-3 gap-4 items-center justify-center mt-4 w-[239.828px]">
 
                             </div>
                         </div>
-                        <div class="flex flex-col text-center" id="howMuchWoman" data-aos="zoom-in" data-aos-duration="1000">
-                            <div class="self-start">
+                        <div class="flex flex-col text-center items-center" id="howMuchWoman" data-aos="zoom-in" data-aos-duration="1000">
+                            <div class="self-center">
                                 <p class="mb-3">People <span class="underline underline-offset-4 decoration-solid decoration-secondary font-extrabold text-lg ">without</span> a penis</p>
-                                <button id="minButtonWoman" type="button" class="rounded-full border-2 border-secondaryDarker py-3 px-5 hover:bg-secondaryDarker hover:border-primairy hover:border-2 hover:text-gray-950 transition duration-500 ease-in-out" onclick="decrement('womanCount')">-</button>
-                                <input type="number" id="womanCount" name="womanCount" value="1" min="0" max="99" class="text-TextWhite mx-3 w-11 text-center bg-transparent border-transparent focus:border-0 focus:outline-none focus:ring-0 active:bg-transparent focus-within:bg-transparent">
-                                <button
-                                    type="button"
-                                    id="plusButtonWoman"
-                                    class="rounded-full border-2 border-secondaryDarker py-3 px-5 hover:bg-secondaryDarker hover:border-primairy hover:border-2 hover:text-gray-950 transition duration-500 ease-in-out"
-                                    onclick="increment('womanCount','womanCountPlus')">+</button>
+                                <div class="flex items-center justify-center space-x-2">
+                                    <button id="minButtonWoman" type="button" class="rounded-full border-2 border-secondaryDarker py-3 px-5 hover:bg-secondaryDarker hover:border-primairy hover:border-2 hover:text-gray-950 transition duration-500 ease-in-out" onclick="decrement('womanCount')">-</button>
+                                    <input type="number" id="womanCount" name="womanCount" value="1" min="0" max="99" class="text-TextWhite mx-3 w-11 text-center bg-transparent border-transparent focus:border-0 focus:outline-none focus:ring-0 active:bg-transparent focus-within:bg-transparent">
+                                    <button type="button" id="plusButtonWoman" class="rounded-full border-2 border-secondaryDarker py-3 px-5 hover:bg-secondaryDarker hover:border-primairy hover:border-2 hover:text-gray-950 transition duration-500 ease-in-out" onclick="increment('womanCount','womanCountPlus')">+</button>
+                                </div>
                             </div>
-                            <div id="womanIMG" class="flex flex-row items-center justify-center gap-4">
+                            <div id="womanIMG" class="grid grid-cols-3 gap-4 items-center justify-center mt-4 w-[239.828px]">
 
                             </div>
                         </div>
