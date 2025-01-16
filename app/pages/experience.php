@@ -32,49 +32,45 @@ $gradients = getRandomGradientClass(true);
                 <div class="question active transition-opacity duration-500 ease-in-out opacity-100 h-full" id="question1">
                     <div class="flex flex-col items-center space-y-1 mb-12" data-aos="zoom-in" data-aos-duration="1000">
                         <h3 class="<?php echo $gradients; ?>">First question</h3>
-                        <h2 class="<?php echo $gradients; ?>">Are you a person with or without a penis</h2>
+                        <h2 class="<?php echo $gradients; ?> ">Are you a person <span class="underline underline-offset-4 decoration-solid decoration-secondary font-extrabold text-lg ">with</span> or <span class="underline underline-offset-4 decoration-solid decoration-secondary font-extrabold text-lg">without</span> a penis</h2>
                     </div>
                     <div class="flex flex-row items-center justify-around space-x-4">
-                        <div class="transform transition duration-500 hover:scale-110 p-5 rounded-full border-2 border-transparent" id="man" >
-                            <label>
+                        <div class="transform transition duration-500 hover:scale-110 p-5 rounded-full border-2 border-transparent relative group" id="man">
+                            <label class="flex flex-col items-center">
                                 <input type="checkbox" name="gender" value="man" class="hidden" onchange="toggleBackground(this)">
-                                <img class="man-front cursor-pointer bg-transparent" src="/assets/images/website_Images/man_front.svg" alt="Man silhouette"  data-aos="zoom-in" data-aos-duration="1000"/>
+                                <h2 class="text-center text-secondary font-bold absolute bottom-0 left-0 right-0 top-0 grid place-items-center opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10">With penis</h2>
+                                <img class="man-front cursor-pointer opacity-100 group-hover:opacity-15 transition-opacity duration-500" src="/assets/images/website_Images/man_front.svg" alt="Man silhouette" data-aos="zoom-in" data-aos-duration="1000" />
                             </label>
                         </div>
-                        <div class="transform transition duration-500 hover:scale-110 p-5 rounded-full border-2 border-transparent" id="woman">
-                            <label>
+                        <div class="transform transition duration-500 hover:scale-110 p-5 rounded-full border-2 border-transparent relative group" id="woman">
+                            <label class="flex flex-col items-center">
                                 <input type="checkbox" name="gender" value="woman" class="hidden" onchange="toggleBackground(this)">
-                                <img class="woman-front cursor-pointer" src="/assets/images/website_Images/woman_front.svg" alt="Woman silhouette" data-aos="zoom-in" data-aos-duration="1000"/>
+                                <h2 class="text-center text-secondary font-bold absolute bottom-0 left-0 right-0 top-0 grid place-items-center opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10">Without penis</h2>
+                                <img class="woman-front cursor-pointer opacity-100 group-hover:opacity-15 transition-opacity duration-500" src="/assets/images/website_Images/woman_front.svg" alt="Woman silhouette" data-aos="zoom-in" data-aos-duration="1000" />
                             </label>
                         </div>
                     </div>
                 </div>
                 <div class="question transition-opacity duration-500 ease-in-out opacity-0 hidden h-full" id="question2">
-                    <div class="flex flex-col items-center space-y-1 mb-12">
+                <div class="flex flex-col items-center space-y-1 mb-12" data-aos="zoom-in" data-aos-duration="1000">
                         <h3 class="<?php echo $gradients; ?>">Second question</h3>
-                        <h2 class="<?php echo $gradients; ?>">What is your age group?</h2>
+                        <h2 class="<?php echo $gradients; ?> "></h2>
                     </div>
                     <div class="flex flex-row items-center justify-around space-x-4">
-                        <label>
-                            <input type="radio" name="age" value="under18" class="hidden">
-                            <span class="cursor-pointer">Under 18</span>
-                        </label>
-                        <label>
-                            <input type="radio" name="age" value="18-24" class="hidden">
-                            <span class="cursor-pointer">18-24</span>
-                        </label>
-                        <label>
-                            <input type="radio" name="age" value="25-34" class="hidden">
-                            <span class="cursor-pointer">25-34</span>
-                        </label>
-                        <label>
-                            <input type="radio" name="age" value="35-44" class="hidden">
-                            <span class="cursor-pointer">35-44</span>
-                        </label>
-                        <label>
-                            <input type="radio" name="age" value="45+" class="hidden">
-                            <span class="cursor-pointer">45+</span>
-                        </label>
+                        <div class="transform transition duration-500 hover:scale-110 p-5 rounded-full border-2 border-transparent relative group" id="man">
+                            <label class="flex flex-col items-center">
+                                <input type="checkbox" name="gender" value="man" class="hidden" onchange="toggleBackground(this)">
+                                <h2 class="text-center text-secondary font-bold absolute bottom-0 left-0 right-0 top-0 grid place-items-center opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10">With penis</h2>
+                                <img class="man-front cursor-pointer opacity-100 group-hover:opacity-15 transition-opacity duration-500" src="/assets/images/website_Images/man_front.svg" alt="Man silhouette" data-aos="zoom-in" data-aos-duration="1000" />
+                            </label>
+                        </div>
+                        <div class="transform transition duration-500 hover:scale-110 p-5 rounded-full border-2 border-transparent relative group" id="woman">
+                            <label class="flex flex-col items-center">
+                                <input type="checkbox" name="gender" value="woman" class="hidden" onchange="toggleBackground(this)">
+                                <h2 class="text-center text-secondary font-bold absolute bottom-0 left-0 right-0 top-0 grid place-items-center opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10">Without penis</h2>
+                                <img class="woman-front cursor-pointer opacity-100 group-hover:opacity-15 transition-opacity duration-500" src="/assets/images/website_Images/woman_front.svg" alt="Woman silhouette" data-aos="zoom-in" data-aos-duration="1000" />
+                            </label>
+                        </div>
                     </div>
                 </div>
                 <!-- Add more questions here -->
