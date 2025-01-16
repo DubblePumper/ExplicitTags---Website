@@ -31,14 +31,14 @@ $gradients = getRandomGradientClass(true);
                     <div class="flex flex-row items-center justify-around gap-x-4">
                         <div class="transform transition duration-500 hover:scale-110 p-5 rounded-full border-2 border-transparent relative group" id="man">
                             <label class="flex flex-col items-center relative">
-                                <input type="checkbox" name="gender" value="man" class="hidden" onchange="toggleBackground(this)">
+                                <input type="radio" name="gender" value="man" class="hidden" onchange="toggleBackground(this)">
                                 <h2 class="text-center text-secondary font-bold absolute inset-0 grid place-items-center opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10">With penis</h2>
                                 <img class="man-front cursor-pointer opacity-100 group-hover:opacity-15 transition-opacity duration-500 mx-auto" src="/assets/images/website_Images/man_front.svg" alt="Man silhouette" data-aos="zoom-in" data-aos-duration="1000" />
                             </label>
                         </div>
                         <div class="transform transition duration-500 hover:scale-110 p-5 rounded-full border-2 border-transparent relative group" id="woman">
                             <label class="flex flex-col items-center relative">
-                                <input type="checkbox" name="gender" value="woman" class="hidden" onchange="toggleBackground(this)">
+                                <input type="radio" name="gender" value="woman" class="hidden" onchange="toggleBackground(this)">
                                 <h2 class="text-center text-secondary font-bold absolute inset-0 grid place-items-center opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10">Without penis</h2>
                                 <img class="woman-front cursor-pointer opacity-100 group-hover:opacity-15 transition-opacity duration-500 mx-auto" src="/assets/images/website_Images/woman_front.svg" alt="Woman silhouette" data-aos="zoom-in" data-aos-duration="1000" />
                             </label>
@@ -99,15 +99,18 @@ $gradients = getRandomGradientClass(true);
         let currentQuestion = localStorage.getItem('currentQuestion') ? parseInt(localStorage.getItem('currentQuestion')) : 0;
         const questions = document.querySelectorAll('.question');
 
-        function toggleBackground(checkbox) {
-            if (checkbox.checked) {
-                checkbox.parentElement.parentElement.classList.add('border-secondary');
-                checkbox.parentElement.parentElement.classList.add('bg-darkPrimairy');
-                checkbox.parentElement.parentElement.classList.remove('border-transparent');
-            } else {
-                checkbox.parentElement.parentElement.classList.remove('border-secondary');
-                checkbox.parentElement.parentElement.classList.remove('bg-darkPrimairy');
-                checkbox.parentElement.parentElement.classList.add('border-transparent');
+        function toggleBackground(radio) {
+            const radios = document.querySelectorAll('input[name="gender"]');
+            radios.forEach((r) => {
+                if (r !== radio) {
+                    r.parentElement.parentElement.classList.remove('border-secondary', 'bg-darkPrimairy');
+                    r.parentElement.parentElement.classList.add('border-transparent');
+                }
+            });
+
+            if (radio.checked) {
+                radio.parentElement.parentElement.classList.add('border-secondary', 'bg-darkPrimairy');
+                radio.parentElement.parentElement.classList.remove('border-transparent');
             }
         }
 
