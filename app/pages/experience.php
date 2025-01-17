@@ -13,15 +13,15 @@ $gradients = getRandomGradientClass(true);
         </div>
     </header>
     <main>
-        <form class="grid grid-cols-3 gap-5 mt-20 w-full" id="experienceForm">
+        <form class="flex flex-row justify-evenly mt-20 w-full" id="experienceForm">
             <div class="flex flex-col self-center justify-self-center items-center justify-center space-y-4 aos-init aos-animate w-fit h-fit" data-aos="fade-right" data-aos-duration="1000">
-                <button type="button" class="rounded-full border-2 border-secondary p-5 hover:bg-secondary hover:border-primairy hover:border-2 hover:text-gray-950 transition duration-500 ease-in-out" onclick="prevQuestion()">
+                <button id="prevButton" type="button" class="rounded-full border-2 border-secondary p-5 hover:bg-secondary hover:border-primairy hover:border-2 hover:text-gray-950 transition duration-500 ease-in-out" onclick="prevQuestion()">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
                     </svg>
                 </button>
             </div>
-            <div class="grid grid-cols-1 gap-4 h-96">
+            <div class="grid grid-cols-1 gap-4 h-96 w-50">
                 <!-- question 1 -->
                 <div class="question active transition-opacity duration-500 ease-in-out opacity-100 h-full" id="question1">
                     <div class="text-center flex flex-col items-center space-y-1 mb-12" data-aos="zoom-in" data-aos-duration="1000">
@@ -46,13 +46,14 @@ $gradients = getRandomGradientClass(true);
                     </div>
                 </div>
                 <!-- question 2 -->
-                <div class="question transition-opacity duration-500 ease-in-out opacity-0 hidden h-full" id="question2">
+                <div class="question transition-opacity duration-500 ease-in-out opacity-0 hidden h-full mb-10" id="question2">
                     <div class="flex flex-col items-center space-y-1 mb-12" data-aos="zoom-in" data-aos-duration="1000">
                         <h3 class="<?php echo $gradients; ?>">Second question</h3>
                         <h2 class="<?php echo $gradients; ?>">How many people need to be involved in total?</h2>
                     </div>
-                    <div class="flex flex-row justify-evenly gap-x-4 w-full">
-                        <div class="flex flex-col text-center items-center" id="howMuchMan" data-aos="zoom-in" data-aos-duration="1000">
+                    <div class="flex flex-row justify-evenly w-full divide-x divide-secondary">
+
+                        <div class="flex flex-col text-center items-center me-3" id="howMuchMan" data-aos="zoom-in" data-aos-duration="1000">
                             <div class="self-center">
                                 <p class="mb-3">People <span class="underline underline-offset-4 decoration-solid decoration-secondary font-extrabold text-lg ">with</span> a penis</p>
                                 <div class="flex items-center justify-center space-x-2">
@@ -61,11 +62,12 @@ $gradients = getRandomGradientClass(true);
                                     <button type="button" id="plusButtonMan" class="rounded-full border-2 border-secondaryDarker py-3 px-5 hover:bg-secondaryDarker hover:border-primairy hover:border-2 hover:text-gray-950 transition duration-500 ease-in-out" onclick="increment('manCount','manCountPlus')">+</button>
                                 </div>
                             </div>
-                            <div id="manIMG" class="grid grid-cols-3 gap-4 items-center justify-center mt-4 w-[239.828px]">
+                            <div id="manIMG" class="grid gap-4 items-center justify-center mt-4 w-[239.828px]">
 
                             </div>
                         </div>
-                        <div class="flex flex-col text-center items-center" id="howMuchWoman" data-aos="zoom-in" data-aos-duration="1000">
+
+                        <div class="flex flex-col text-center items-center ms-3" id="howMuchWoman" data-aos="zoom-in" data-aos-duration="1000">
                             <div class="self-center">
                                 <p class="mb-3">People <span class="underline underline-offset-4 decoration-solid decoration-secondary font-extrabold text-lg ">without</span> a penis</p>
                                 <div class="flex items-center justify-center space-x-2">
@@ -74,12 +76,52 @@ $gradients = getRandomGradientClass(true);
                                     <button type="button" id="plusButtonWoman" class="rounded-full border-2 border-secondaryDarker py-3 px-5 hover:bg-secondaryDarker hover:border-primairy hover:border-2 hover:text-gray-950 transition duration-500 ease-in-out" onclick="increment('womanCount','womanCountPlus')">+</button>
                                 </div>
                             </div>
-                            <div id="womanIMG" class="grid grid-cols-3 gap-4 items-center justify-center mt-4 w-[239.828px]">
+                            <div id="womanIMG" class="grid gap-4 items-center justify-center mt-4 w-[239.828px]">
 
                             </div>
                         </div>
+
                     </div>
                 </div>
+                <!-- 3 questions -->
+                <div class="question transition-opacity duration-500 ease-in-out opacity-0 hidden h-full mb-10" id="question3">
+                    <div class="flex flex-col items-center space-y-1 mb-12" data-aos="zoom-in" data-aos-duration="1000">
+                        <h3 class="<?php echo $gradients; ?>">third question</h3>
+                        <h2 class="<?php echo $gradients; ?>">Is there a performer that you want to include or exclude?</h2>
+                    </div>
+                    <div class="flex flex-row justify-evenly w-full divide-x divide-secondary">
+
+                        <div class="flex flex-col text-center items-center me-3" id="howMuchMan" data-aos="zoom-in" data-aos-duration="1000">
+                            <div class="self-center">
+                                <p class="mb-3">People <span class="underline underline-offset-4 decoration-solid decoration-secondary font-extrabold text-lg ">with</span> a penis</p>
+                                <div class="flex items-center justify-center space-x-2">
+                                    <button id="minButtonMan" type="button" class="rounded-full border-2 border-secondaryDarker py-3 px-5 hover:bg-secondaryDarker hover:border-primairy hover:border-2 hover:text-gray-950 transition duration-500 ease-in-out" onclick="decrement('manCount')">-</button>
+                                    <input type="number" id="manCount" name="manCount" value="1" min="0" max="99" class="text-TextWhite mx-3 w-11 text-center bg-transparent border-transparent focus:border-0 focus:outline-none focus:ring-0 active:bg-transparent focus-within:bg-transparent">
+                                    <button type="button" id="plusButtonMan" class="rounded-full border-2 border-secondaryDarker py-3 px-5 hover:bg-secondaryDarker hover:border-primairy hover:border-2 hover:text-gray-950 transition duration-500 ease-in-out" onclick="increment('manCount','manCountPlus')">+</button>
+                                </div>
+                            </div>
+                            <div id="manIMG" class="grid gap-4 items-center justify-center mt-4 w-[239.828px]">
+
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col text-center items-center ms-3" id="howMuchWoman" data-aos="zoom-in" data-aos-duration="1000">
+                            <div class="self-center">
+                                <p class="mb-3">People <span class="underline underline-offset-4 decoration-solid decoration-secondary font-extrabold text-lg ">without</span> a penis</p>
+                                <div class="flex items-center justify-center space-x-2">
+                                    <button id="minButtonWoman" type="button" class="rounded-full border-2 border-secondaryDarker py-3 px-5 hover:bg-secondaryDarker hover:border-primairy hover:border-2 hover:text-gray-950 transition duration-500 ease-in-out" onclick="decrement('womanCount')">-</button>
+                                    <input type="number" id="womanCount" name="womanCount" value="1" min="0" max="99" class="text-TextWhite mx-3 w-11 text-center bg-transparent border-transparent focus:border-0 focus:outline-none focus:ring-0 active:bg-transparent focus-within:bg-transparent">
+                                    <button type="button" id="plusButtonWoman" class="rounded-full border-2 border-secondaryDarker py-3 px-5 hover:bg-secondaryDarker hover:border-primairy hover:border-2 hover:text-gray-950 transition duration-500 ease-in-out" onclick="increment('womanCount','womanCountPlus')">+</button>
+                                </div>
+                            </div>
+                            <div id="womanIMG" class="grid gap-4 items-center justify-center mt-4 w-[239.828px]">
+
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
                 <!-- Add more questions here -->
             </div>
             <div class="flex flex-col self-center justify-self-center items-center justify-center space-y-4 aos-init aos-animate w-fit h-fit" data-aos="fade-left" data-aos-duration="1000">
@@ -96,7 +138,7 @@ $gradients = getRandomGradientClass(true);
     ?>
 
     <script>
-        let currentQuestion = localStorage.getItem('currentQuestion') ? parseInt(localStorage.getItem('currentQuestion')) : 0;
+        let currentQuestion = parseInt(new URLSearchParams(window.location.search).get('question')) || 0;
         const questions = document.querySelectorAll('.question');
 
         function toggleBackground(radio) {
@@ -124,6 +166,8 @@ $gradients = getRandomGradientClass(true);
                     question.classList.remove('opacity-100');
                 }
             });
+            checkButtons();
+            updateURL(index);
         }
 
         function nextQuestion() {
@@ -150,6 +194,20 @@ $gradients = getRandomGradientClass(true);
                     showQuestion(currentQuestion);
                 }, 500);
             }
+        }
+
+        function checkButtons() {
+            if (currentQuestion === 0) {
+                document.getElementById('prevButton').classList.add('hidden');
+            } else {
+                document.getElementById('prevButton').classList.remove('hidden');
+            }
+        }
+
+        function updateURL(index) {
+            const url = new URL(window.location);
+            url.searchParams.set('question', index);
+            window.history.pushState({}, '', url);
         }
 
         showQuestion(currentQuestion);
@@ -198,6 +256,7 @@ $gradients = getRandomGradientClass(true);
                 manImages--;
             }
 
+            updateGridColumns(manIMG, manImages);
             manCountValue = value;
         });
 
@@ -217,6 +276,7 @@ $gradients = getRandomGradientClass(true);
                 womanImages--;
             }
 
+            updateGridColumns(womanIMG, womanImages);
             womanCountValue = value;
         });
 
@@ -229,6 +289,9 @@ $gradients = getRandomGradientClass(true);
             for (let i = 0; i < womanCountValue; i++) {
                 addImage(womanIMG, '/assets/images/website_Images/woman_front.svg', 'woman-front');
             }
+
+            updateGridColumns(manIMG, manCountValue);
+            updateGridColumns(womanIMG, womanCountValue);
         });
 
         function addImage(container, src, className) {
@@ -284,6 +347,19 @@ $gradients = getRandomGradientClass(true);
             if (parseInt(input.value) > minVal) {
                 input.value = parseInt(input.value) - 1;
                 input.dispatchEvent(new Event('change')); // Trigger change event
+            }
+        }
+
+        function updateGridColumns(container, count) {
+            if (count === 1) {
+                container.classList.add('grid-cols-1');
+                container.classList.remove('grid-cols-2', 'grid-cols-3');
+            } else if (count === 2) {
+                container.classList.add('grid-cols-2');
+                container.classList.remove('grid-cols-1', 'grid-cols-3');
+            } else {
+                container.classList.add('grid-cols-3');
+                container.classList.remove('grid-cols-1', 'grid-cols-2');
             }
         }
     </script>
