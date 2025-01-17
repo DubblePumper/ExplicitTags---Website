@@ -4,6 +4,13 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/include-all.php';
 $gradients = getRandomGradientClass(true);
 ?>
 
+<style>
+    .rounded-full img {
+        object-fit: cover;
+        border-radius: 50%;
+    }
+</style>
+
 <body class="text-TextWhite">
     <header>
         <div class="text-center mt-10 flex flex-col items-center justify-center space-y-2" data-aos="fade-down" data-aos-duration="1000">
@@ -89,36 +96,29 @@ $gradients = getRandomGradientClass(true);
                         <h3 class="<?php echo $gradients; ?>">third question</h3>
                         <h2 class="<?php echo $gradients; ?>">Is there a performer that you want to include or exclude?</h2>
                     </div>
-                    <div class="flex flex-row justify-evenly w-full divide-x divide-secondary">
-
-                        <div class="flex flex-col text-center items-center me-3" id="howMuchMan" data-aos="zoom-in" data-aos-duration="1000">
-                            <div class="self-center">
-                                <p class="mb-3">People <span class="underline underline-offset-4 decoration-solid decoration-secondary font-extrabold text-lg ">with</span> a penis</p>
-                                <div class="flex items-center justify-center space-x-2">
-                                    <button id="minButtonMan" type="button" class="rounded-full border-2 border-secondaryDarker py-3 px-5 hover:bg-secondaryDarker hover:border-primairy hover:border-2 hover:text-gray-950 transition duration-500 ease-in-out" onclick="decrement('manCount')">-</button>
-                                    <input type="number" id="manCount" name="manCount" value="1" min="0" max="99" class="text-TextWhite mx-3 w-11 text-center bg-transparent border-transparent focus:border-0 focus:outline-none focus:ring-0 active:bg-transparent focus-within:bg-transparent">
-                                    <button type="button" id="plusButtonMan" class="rounded-full border-2 border-secondaryDarker py-3 px-5 hover:bg-secondaryDarker hover:border-primairy hover:border-2 hover:text-gray-950 transition duration-500 ease-in-out" onclick="increment('manCount','manCountPlus')">+</button>
-                                </div>
-                            </div>
-                            <div id="manIMG" class="grid gap-4 items-center justify-center mt-4 w-[239.828px]">
-
-                            </div>
+                    <div class="flex flex-col items-center space-y-4">
+                        <input type="text" id="searchBar" placeholder="Search by name" class="text-TextWhite bg-transparent border-b-2 border-secondary focus:outline-none focus:border-primairy">
+                        <div class="flex space-x-4">
+                            <label class="flex items-center space-x-2">
+                                <input type="checkbox" id="searchMan" class="text-secondary">
+                                <span>Man</span>
+                            </label>
+                            <label class="flex items-center space-x-2">
+                                <input type="checkbox" id="searchWoman" class="text-secondary">
+                                <span>Woman</span>
+                            </label>
                         </div>
-
-                        <div class="flex flex-col text-center items-center ms-3" id="howMuchWoman" data-aos="zoom-in" data-aos-duration="1000">
-                            <div class="self-center">
-                                <p class="mb-3">People <span class="underline underline-offset-4 decoration-solid decoration-secondary font-extrabold text-lg ">without</span> a penis</p>
-                                <div class="flex items-center justify-center space-x-2">
-                                    <button id="minButtonWoman" type="button" class="rounded-full border-2 border-secondaryDarker py-3 px-5 hover:bg-secondaryDarker hover:border-primairy hover:border-2 hover:text-gray-950 transition duration-500 ease-in-out" onclick="decrement('womanCount')">-</button>
-                                    <input type="number" id="womanCount" name="womanCount" value="1" min="0" max="99" class="text-TextWhite mx-3 w-11 text-center bg-transparent border-transparent focus:border-0 focus:outline-none focus:ring-0 active:bg-transparent focus-within:bg-transparent">
-                                    <button type="button" id="plusButtonWoman" class="rounded-full border-2 border-secondaryDarker py-3 px-5 hover:bg-secondaryDarker hover:border-primairy hover:border-2 hover:text-gray-950 transition duration-500 ease-in-out" onclick="increment('womanCount','womanCountPlus')">+</button>
-                                </div>
-                            </div>
-                            <div id="womanIMG" class="grid gap-4 items-center justify-center mt-4 w-[239.828px]">
-
-                            </div>
-                        </div>
-
+                        <table class="table-auto border-collapse w-full text-TextWhite">
+                            <thead class="mb-4">
+                                <tr>
+                                    <th class="px-4 py-2 text-center border border-slate-500">Image</th>
+                                    <th class="px-4 py-2 text-end border border-slate-500">Name</th>
+                                </tr>
+                            </thead>
+                            <tbody id="searchResults" class="first:mt-5">
+                                <!-- Search results will be inserted here -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
@@ -362,5 +362,74 @@ $gradients = getRandomGradientClass(true);
                 container.classList.remove('grid-cols-1', 'grid-cols-2');
             }
         }
+
+        // -----------------------------------
+        // Search functionality
+        // -----------------------------------
+
+        const searchBar = document.getElementById('searchBar');
+        const searchMan = document.getElementById('searchMan');
+        const searchWoman = document.getElementById('searchWoman');
+        const searchResults = document.getElementById('searchResults');
+
+        // Remove direct updateSearchResults listeners:
+        searchBar.removeEventListener('input', updateSearchResults);
+        searchBar.removeEventListener('keyup', updateSearchResults);
+
+        // Add a debounce around updateSearchResults:
+        let debounceTimer;
+        function debounceSearch() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                updateSearchResults();
+            }, 300);
+        }
+
+        searchBar.addEventListener('input', debounceSearch);
+        searchBar.addEventListener('keyup', debounceSearch);
+
+        searchMan.addEventListener('change', updateSearchResults);
+        searchWoman.addEventListener('change', updateSearchResults);
+
+        function updateSearchResults() {
+            const query = searchBar.value.toLowerCase();
+            const isManChecked = searchMan.checked;
+            const isWomanChecked = searchWoman.checked;
+            let gender = '';
+
+            if (isManChecked && !isWomanChecked) {
+                gender = 'Male';
+            } else if (!isManChecked && isWomanChecked) {
+                gender = 'Female';
+            } else if (isManChecked && isWomanChecked) {
+                gender = ''; // Both checked, no gender filter
+            }
+
+            fetch(`/api/performers.php?table=performers&columns=p.id AS performer_id, p.name, p.gender, MIN(pi.image_url) AS image_url&limit=15&search=${encodeURIComponent(query)}&gender=${encodeURIComponent(gender)}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json(); // Change to json to handle JSON respo nses
+                })
+                .then(data => {
+                    if (Array.isArray(data)) {
+                        searchResults.innerHTML = data.map(performer => `
+                            <tr class="first:mt-5">
+                                <td class="flex justify-center px-4 py-2 border-r border-slate-500">
+                                    <div class="w-16 h-16 rounded-full overflow-hidden">
+                                        <img src="${performer.image_url}" alt="${performer.name}" class="w-full h-full object-cover">
+                                    </div>
+                                </td>
+                                <td class="px-4 py-2 text-end">${performer.name}</td>
+                            </tr>
+                        `).join('');
+                    } else {
+                        console.error('Error: Expected an array but received:', data);
+                    }
+                })
+                .catch(error => console.error('Error fetching performers:', error));
+        }
     </script>
 </body>
+</html>

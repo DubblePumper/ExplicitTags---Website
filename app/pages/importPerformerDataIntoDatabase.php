@@ -4,8 +4,6 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/include-all.php';
 
 try {
     // Databaseverbinding
-    $pdo = new PDO("mysql:host=db;dbname=headDB;charset=utf8", "admin", "123456789");
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
     // JSON-bestand laden
     $json = file_get_contents($_SERVER['DOCUMENT_ROOT'] . '/performers_details_data.json');
