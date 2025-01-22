@@ -28,6 +28,14 @@ function sendSSE($event, $data)
     flush();
 }
 
+// Function to calculate similarity score
+function calculateSimilarity($search, $name) {
+    $search = strtolower($search);
+    $name = strtolower($name);
+    $levDistance = levenshtein($search, $name);
+    return 1 / (1 + $levDistance); // Higher score means more similar
+}
+
 try {
     // Send initial ping
     sendSSE('ping', ['status' => 'connected']);
@@ -42,36 +50,44 @@ try {
     $search = urldecode(filter_input(INPUT_GET, 'search', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? '');
     $gender = filter_input(INPUT_GET, 'gender', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? '';
 
-    // Query building with FULLTEXT search
-    $query = "SELECT DISTINCT p.id AS performer_id, p.name, p.gender, MIN(pi.image_url) AS image_url 
+    // Debug logging
+    error_log("Search query: " . $search);
+    error_log("Gender filter: " . $gender);
+
+    // Query building with case-insensitive search
+    $query = "SELECT p.id AS performer_id, p.name, p.gender, MIN(pi.image_url) AS image_url 
               FROM performers p 
               LEFT JOIN performer_images pi ON p.id = pi.performer_id";
     
     $params = [];
     $conditions = [];
 
-    if (!empty($search)) {
-        // Simple LIKE search instead of FULLTEXT for now
-        $conditions[] = "p.name LIKE :search";
-        $params[':search'] = '%' . $search . '%';
-        
-        error_log("Search term: " . $search);
-    }
-
     if (!empty($gender)) {
         $conditions[] = "p.gender = :gender";
         $params[':gender'] = $gender;
+    }
+
+    // For search, we'll do a broader LIKE query first
+    if (!empty($search)) {
+        $searchTerms = explode(' ', trim($search));
+        $searchConditions = [];
+        foreach ($searchTerms as $i => $term) {
+            $paramName = ":search{$i}";
+            $searchConditions[] = "p.name LIKE {$paramName}";
+            $params[$paramName] = "%{$term}%";
+        }
+        $conditions[] = "(" . implode(" OR ", $searchConditions) . ")";
     }
 
     if (!empty($conditions)) {
         $query .= " WHERE " . implode(' AND ', $conditions);
     }
 
-    $query .= " GROUP BY p.id, p.name, p.gender ORDER BY p.name ASC LIMIT 15";
+    $query .= " GROUP BY p.id, p.name, p.gender";
 
-    // Debug logging
-    error_log("Final query: " . $query);
-    error_log("Parameters: " . print_r($params, true));
+    // Add debug logging for the final query
+    error_log("Final SQL query: " . $query);
+    error_log("Query parameters: " . print_r($params, true));
 
     // Execute query
     $stmt = $pdo->prepare($query);
@@ -81,16 +97,31 @@ try {
 
     $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    // Debug log the results
-    error_log("Query results count: " . count($results));
-    if (empty($results)) {
-        error_log("No results found for search");
+    // Apply Levenshtein filtering and sorting
+    if (!empty($search)) {
+        // Calculate similarity scores
+        foreach ($results as &$result) {
+            $result['similarity'] = calculateSimilarity($search, $result['name']);
+        }
+
+        // Sort by similarity score
+        usort($results, function($a, $b) {
+            return $b['similarity'] <=> $a['similarity'];
+        });
+
+        // Limit to top 15 results
+        $results = array_slice($results, 0, 15);
     }
 
-    // After executing query, dump first few rows for debugging
-    if ($results) {
-        error_log("First result: " . print_r($results[0] ?? 'no results', true));
-    }
+    // Remove duplicates based on name
+    $seen = [];
+    $results = array_filter($results, function($result) use (&$seen) {
+        if (isset($seen[strtolower($result['name'])])) {
+            return false;
+        }
+        $seen[strtolower($result['name'])] = true;
+        return true;
+    });
 
     // Process results
     array_walk($results, function (&$result) {
@@ -98,6 +129,14 @@ try {
             // Remove local path and replace backslashes with forward slashes
             $result['image_url'] = str_replace('E:\\github repos\\porn_ai_analyser\\app\\datasets\\pornstar_images', '', $result['image_url']);
             $result['image_url'] = str_replace('\\', '/', $result['image_url']);
+            
+            // Fix folder names by removing trailing dots
+            $parts = explode('/', $result['image_url']);
+            if (count($parts) > 1) {
+                $parts[1] = rtrim($parts[1], '.'); // Remove trailing dots from folder name
+                $result['image_url'] = implode('/', $parts);
+            }
+            
             // Construct the correct GitHub URL
             $result['image_url'] = 'https://cdn.jsdelivr.net/gh/DubblePumper/porn_ai_analyser@main/app/datasets/pornstar_images' . $result['image_url'];
         } else {
@@ -113,7 +152,7 @@ try {
             'gender' => $result['gender'],
             'image_url' => $result['image_url']
         ];
-    }, $results));
+    }, array_values($results)));
 
     // End connection cleanly
     exit(0);

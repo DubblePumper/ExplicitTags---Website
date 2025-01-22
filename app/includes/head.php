@@ -82,7 +82,7 @@
 
     <!-- Additional meta tags -->
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="theme-color" content="#ffffff">
-    <meta name="msapplication-TileColor" content="#ffffff">
+    <meta name="theme-color" content="#12143a">
+    <meta name="msapplication-TileColor" content="#12143a">
     <meta name="msapplication-TileImage" content="/assets/images/icons/mstile-144x144.png">
 </head>

@@ -383,11 +383,18 @@ $gradients = getRandomGradientClass(true);
             }
 
             try {
+                const searchTerm = searchBar.value.trim();
                 const params = new URLSearchParams({
-                    search: encodeURIComponent(searchBar.value.toLowerCase()),
+                    search: searchTerm,
                     gender: getGenderFilter(),
                     t: Date.now()
                 });
+
+                // Only start search if we have a search term
+                if (searchTerm.length === 0 && !getGenderFilter()) {
+                    searchResults.innerHTML = '<tr><td colspan="2" class="text-center py-4">Type to search...</td></tr>';
+                    return;
+                }
 
                 eventSource = new EventSource(`/api/performers_sse.php?${params}`);
                 let reconnectAttempts = 0;
@@ -446,7 +453,7 @@ $gradients = getRandomGradientClass(true);
                     }
 
                     return `
-                        <tr class="first:mt-5">
+                        <tr>
                             <td class="flex justify-center px-4 py-2 border-r border-slate-500">
                                 <div class="w-16 h-16 rounded-full overflow-hidden group">
                                     <img src="${imageUrl}" 
@@ -487,7 +494,10 @@ $gradients = getRandomGradientClass(true);
         function debounceSearch() {
             clearTimeout(debounceTimer);
             debounceTimer = setTimeout(() => {
-                startSSE();
+                const searchTerm = searchBar.value.trim();
+                if (searchTerm.length > 0 || getGenderFilter()) {
+                    startSSE();
+                }
             }, 300);
         }
 
