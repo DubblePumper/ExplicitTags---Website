@@ -1,5 +1,37 @@
 RewriteEngine On
 
+# First, check if we're already on HTTPS
+RewriteCond %{HTTPS} =on [OR]
+RewriteCond %{HTTP:X-Forwarded-Proto} =https
+RewriteRule ^ - [E=PROTO:https]
+
+# Force HTTPS if not already on it and not accessing localhost
+RewriteCond %{ENV:PROTO} !=https
+RewriteCond %{HTTP_HOST} !^localhost [NC]
+RewriteCond %{HTTP_HOST} !^127\.0\.0\.1
+RewriteCond %{HTTP_HOST} ^explicittags\.com$ [NC]
+RewriteCond %{REQUEST_URI} !^/\.well-known/acme-challenge/
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Security headers
+Header set Strict-Transport-Security "max-age=31536000; includeSubDomains" env=HTTPS
+Header set Content-Security-Policy "upgrade-insecure-requests"
+Header set X-Content-Type-Options "nosniff"
+Header set X-Frame-Options "SAMEORIGIN"
+Header set X-XSS-Protection "1; mode=block"
+Header set Referrer-Policy "strict-origin-when-cross-origin"
+
+# Enable CORS for SSE
+Header set Access-Control-Allow-Origin "https://explicittags.com"
+Header set Access-Control-Allow-Methods "GET, POST, OPTIONS"
+Header set Access-Control-Allow-Headers "Content-Type"
+
+# Handle EventSource CORS specifically
+<FilesMatch "performers_sse\.php$">
+    Header set Cache-Control "no-cache"
+    Header set Content-Type "text/event-stream"
+</FilesMatch>
+
 # Handle index path
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
@@ -23,3 +55,14 @@ RewriteRule ^([^\.]+)$ $1.php [L]
 # Redirect to remove file extensions in the URL
 RewriteCond %{THE_REQUEST} ^[A-Z]{3,}\s([^.]+)\.(php|html|htm) [NC]
 RewriteRule ^ %1 [R=301,L]
+
+# Prevent directory listings
+Options -Indexes
+
+# Protect against common vulnerabilities
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Download-Options "noopen"
+    Header set X-Permitted-Cross-Domain-Policies "none"
+</IfModule>
+

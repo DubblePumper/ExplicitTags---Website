@@ -6,29 +6,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <!-- SEO meta tags -->
-    <meta name="description" content="Add your page description here">
-    <meta name="keywords" content="website, example, SEO">
-    <meta name="robots" content="index, follow">
-    <meta name="author" content="Your Name">
+    <meta name="description" content="ExplicitTags - Advanced AI-powered adult content analyzer and recommender system">
+    <meta name="keywords" content="adult content, AI analysis, performer recognition, content recommendations, adult tags">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="author" content="Sander | DubblePumper">
 
     <!-- Open Graph tags for social sharing -->
-    <meta property="og:title" content="My Website">
-    <meta property="og:description" content="Description for social sharing">
-    <meta property="og:image" content="https://www.example.com/image.jpg">
-    <meta property="og:url" content="https://www.example.com">
+    <meta property="og:title" content="ExplicitTags - AI Adult Content Analyzer">
+    <meta property="og:description" content="Advanced AI-powered system for analyzing and recommending adult content">
+    <meta property="og:image" content="/assets/images/icons/ExplicitTags-logo-SVG-NoQuote.svg">
+    <meta property="og:url" content="https://explicittags.com">
     <meta property="og:type" content="website">
 
     <!-- Twitter Card data -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="My Website">
-    <meta name="twitter:description" content="Description for social sharing">
-    <meta name="twitter:image" content="https://www.example.com/image.jpg">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="ExplicitTags - AI Adult Content Analyzer">
+    <meta name="twitter:description" content="Advanced AI-powered system for analyzing and recommending adult content">
+    <meta name="twitter:image" content="/assets/images/icons/ExplicitTags-logo-SVG-NoQuote.svg">
 
     <!-- Canonical link to avoid duplicate content issues -->
-    <link rel="canonical" href="https://www.example.com/">
+    <link rel="canonical" href="https://explicittags.com/">
 
     <!-- Title of the document -->
-    <title>ExplicitTags</title>
+    <title>ExplicitTags - AI Adult Content Analyzer</title>
 
     <!-- AOS Animation CDN -->
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">

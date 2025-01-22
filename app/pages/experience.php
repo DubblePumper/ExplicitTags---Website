@@ -2,6 +2,8 @@
 
 require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/include-all.php';
 $gradients = getRandomGradientClass(true);
+
+// Make sure you have no environment or config forcing "http://"
 ?>
 
 <style>
@@ -140,6 +142,7 @@ $gradients = getRandomGradientClass(true);
     <script>
         let currentQuestion = parseInt(new URLSearchParams(window.location.search).get('question')) || 0;
         const questions = document.querySelectorAll('.question');
+        let debounceTimer; // Define debounceTimer
 
         function toggleBackground(radio) {
             const radios = document.querySelectorAll('input[name="gender"]');
@@ -364,7 +367,7 @@ $gradients = getRandomGradientClass(true);
         }
 
         // -----------------------------------
-        // Search functionality
+        // Search functionality using SSE
         // -----------------------------------
 
         const searchBar = document.getElementById('searchBar');
@@ -372,64 +375,123 @@ $gradients = getRandomGradientClass(true);
         const searchWoman = document.getElementById('searchWoman');
         const searchResults = document.getElementById('searchResults');
 
-        // Remove direct updateSearchResults listeners:
-        searchBar.removeEventListener('input', updateSearchResults);
-        searchBar.removeEventListener('keyup', updateSearchResults);
+        let eventSource;
 
-        // Add a debounce around updateSearchResults:
-        let debounceTimer;
-        function debounceSearch() {
-            clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(() => {
-                updateSearchResults();
-            }, 300);
+        function startSSE() {
+            if (eventSource) {
+                eventSource.close();
+            }
+
+            try {
+                const params = new URLSearchParams({
+                    search: encodeURIComponent(searchBar.value.toLowerCase()),
+                    gender: getGenderFilter(),
+                    t: Date.now()
+                });
+
+                eventSource = new EventSource(`/api/performers_sse.php?${params}`);
+                let reconnectAttempts = 0;
+                const maxReconnectAttempts = 3;
+
+                eventSource.onopen = () => {
+                    reconnectAttempts = 0;
+                    searchResults.innerHTML = '<tr><td colspan="2" class="text-center py-4">Searching...</td></tr>';
+                };
+
+                eventSource.addEventListener('performers', (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        updateSearchResults(data);
+                        eventSource.close(); // Close connection after receiving data
+                    } catch (e) {
+                        console.error('Error parsing performers data:', e);
+                        searchResults.innerHTML = '<tr><td colspan="2" class="text-center py-4">Error loading results</td></tr>';
+                    }
+                });
+
+                eventSource.addEventListener('error', (event) => {
+                    console.error('SSE Error:', event);
+                    
+                    if (eventSource.readyState === EventSource.CLOSED) {
+                        if (reconnectAttempts < maxReconnectAttempts) {
+                            searchResults.innerHTML = `<tr><td colspan="2" class="text-center py-4">Reconnecting... (${reconnectAttempts + 1}/${maxReconnectAttempts})</td></tr>`;
+                            reconnectAttempts++;
+                            setTimeout(startSSE, 3000);
+                        } else {
+                            searchResults.innerHTML = '<tr><td colspan="2" class="text-center py-4">Connection failed. Please try again later.</td></tr>';
+                        }
+                    }
+                });
+
+            } catch (error) {
+                console.error('Error creating EventSource:', error);
+                searchResults.innerHTML = '<tr><td colspan="2" class="text-center py-4">Connection error</td></tr>';
+            }
+        }
+
+        function updateSearchResults(data) {
+            if (!Array.isArray(data) || data.length === 0) {
+                searchResults.innerHTML = '<tr><td colspan="2" class="text-center py-4">No results found</td></tr>';
+                return;
+            }
+
+            const defaultImage = 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'white\' stroke-width=\'2\'%3E%3Ccircle cx=\'12\' cy=\'8\' r=\'5\'/%3E%3Cpath d=\'M3 21v-2a7 7 0 0 1 14 0v2\'/%3E%3C/svg%3E';
+
+            try {
+                searchResults.innerHTML = data.map(performer => {
+                    // Sanitize the image URL
+                    let imageUrl = performer.image_url;
+                    if (!imageUrl) {
+                        imageUrl = defaultImage;
+                    }
+
+                    return `
+                        <tr class="first:mt-5">
+                            <td class="flex justify-center px-4 py-2 border-r border-slate-500">
+                                <div class="w-16 h-16 rounded-full overflow-hidden group">
+                                    <img src="${imageUrl}" 
+                                         alt="${performer.name}" 
+                                         class="w-full h-full object-cover blur-sm transition-all duration-300 group-hover:blur-none"
+                                         onerror="this.onerror=null; this.src='${defaultImage}';">
+                                </div>
+                            </td>
+                            <td class="px-4 py-2 text-end">${performer.name}</td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Error rendering results:', error);
+                searchResults.innerHTML = '<tr><td colspan="2" class="text-center py-4">Error displaying results</td></tr>';
+            }
+        }
+
+        function getGenderFilter() {
+            const isManChecked = searchMan.checked;
+            const isWomanChecked = searchWoman.checked;
+            
+            if (isManChecked && !isWomanChecked) return 'Male';
+            if (!isManChecked && isWomanChecked) return 'Female';
+            return '';
         }
 
         searchBar.addEventListener('input', debounceSearch);
-        searchBar.addEventListener('keyup', debounceSearch);
+        searchMan.addEventListener('change', () => {
+            clearTimeout(debounceTimer);
+            startSSE();
+        });
+        searchWoman.addEventListener('change', () => {
+            clearTimeout(debounceTimer);
+            startSSE();
+        });
 
-        searchMan.addEventListener('change', updateSearchResults);
-        searchWoman.addEventListener('change', updateSearchResults);
-
-        function updateSearchResults() {
-            const query = searchBar.value.toLowerCase();
-            const isManChecked = searchMan.checked;
-            const isWomanChecked = searchWoman.checked;
-            let gender = '';
-
-            if (isManChecked && !isWomanChecked) {
-                gender = 'Male';
-            } else if (!isManChecked && isWomanChecked) {
-                gender = 'Female';
-            } else if (isManChecked && isWomanChecked) {
-                gender = ''; // Both checked, no gender filter
-            }
-
-            fetch(`/api/performers.php?table=performers&columns=p.id AS performer_id, p.name, p.gender, MIN(pi.image_url) AS image_url&limit=15&search=${encodeURIComponent(query)}&gender=${encodeURIComponent(gender)}`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json(); // Change to json to handle JSON respo nses
-                })
-                .then(data => {
-                    if (Array.isArray(data)) {
-                        searchResults.innerHTML = data.map(performer => `
-                            <tr class="first:mt-5">
-                                <td class="flex justify-center px-4 py-2 border-r border-slate-500">
-                                    <div class="w-16 h-16 rounded-full overflow-hidden">
-                                        <img src="${performer.image_url}" alt="${performer.name}" class="w-full h-full object-cover">
-                                    </div>
-                                </td>
-                                <td class="px-4 py-2 text-end">${performer.name}</td>
-                            </tr>
-                        `).join('');
-                    } else {
-                        console.error('Error: Expected an array but received:', data);
-                    }
-                })
-                .catch(error => console.error('Error fetching performers:', error));
+        function debounceSearch() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                startSSE();
+            }, 300);
         }
+
+        window.addEventListener('DOMContentLoaded', startSSE);
     </script>
 </body>
 </html>
