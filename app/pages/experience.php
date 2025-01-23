@@ -8,8 +8,15 @@ $gradients = getRandomGradientClass(true);
 
 <style>
     .rounded-full img {
-        object-fit: cover;
+        object-fit: contain;
         border-radius: 50%;
+    }
+    @media (max-width: 768px) {
+        .no-aos-mobile {
+            opacity: 1 !important;
+            transform: none !important;
+            transition: none !important;
+        }
     }
 </style>
 
@@ -21,20 +28,20 @@ $gradients = getRandomGradientClass(true);
             <h3 class="<?php echo $gradients; ?>" data-aos="fade-down" data-aos-duration="1000">And guess what... We will find it for you</h3>
         </div>
     </header>
-    <main>
-        <form class="flex flex-row justify-evenly mt-20 w-full" id="experienceForm">
-            <div class="flex flex-col self-center justify-self-center items-center justify-center space-y-4 aos-init aos-animate w-fit h-fit" data-aos="fade-right" data-aos-duration="1000">
-                <button id="prevButton" type="button" class="rounded-full border-2 border-secondary p-5 hover:bg-secondary hover:border-primairy hover:border-2 hover:text-gray-950 transition duration-500 ease-in-out" onclick="prevQuestion()">
+    <main class="overflow-y-auto min-h-screen">
+        <form class="flex flex-col md:flex-row justify-evenly mt-20 w-full space-y-4 md:space-y-0" id="experienceForm">
+            <div class="flex flex-col self-center justify-self-center items-center justify-center space-y-4 aos-init aos-animate w-fit h-fit no-aos-mobile" data-aos="fade-right" data-aos-duration="1000">
+                <button id="prevButton" type="button" class="rounded-full border-2 border-secondary p-3 sm:p-5 hover:bg-secondary hover:border-primairy hover:border-2 hover:text-gray-950 transition duration-500 ease-in-out" onclick="prevQuestion()">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
                     </svg>
                 </button>
             </div>
-            <div class="grid grid-cols-1 gap-4 h-96 w-50">
+            <div class="grid grid-cols-1 gap-4 w-full md:w-2/3">
                 <!-- question 1 -->
-                <div class="question active transition-opacity duration-500 ease-in-out opacity-100 h-full" id="question1">
+                <div class="question active transition-opacity duration-500 ease-in-out opacity-100 h-auto md:h-96" id="question1">
                     <div class="text-center flex flex-col items-center space-y-1 mb-12" data-aos="zoom-in" data-aos-duration="1000">
-                        <h3 class="<?php echo $gradients; ?>">First question</h3>
+                        <h3 class="<?php echo $gradients; ?> ">First question</h3>
                         <h2 class="<?php echo $gradients; ?> ">Are you a person <span class="underline underline-offset-4 decoration-solid decoration-secondary font-extrabold text-lg ">with</span> or <span class="underline underline-offset-4 decoration-solid decoration-secondary font-extrabold text-lg">without</span> a penis</h2>
                     </div>
                     <div class="flex flex-row items-center justify-around gap-x-4">
@@ -42,27 +49,26 @@ $gradients = getRandomGradientClass(true);
                             <label class="flex flex-col items-center relative">
                                 <input type="radio" name="gender" value="man" class="hidden" onchange="toggleBackground(this)">
                                 <h2 class="text-center text-secondary font-bold absolute inset-0 grid place-items-center opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10">With penis</h2>
-                                <img class="man-front cursor-pointer opacity-100 group-hover:opacity-15 transition-opacity duration-500 mx-auto" src="/assets/images/website_Images/man_front.svg" alt="Man silhouette" data-aos="zoom-in" data-aos-duration="1000" />
+                                <img class="man-front cursor-pointer opacity-100 group-hover:opacity-15 transition-opacity duration-500 mx-auto w-16 h-16 sm:w-24 sm:h-24 md:w-32 md:h-32" src="/assets/images/website_Images/man_front.svg" alt="Man silhouette" data-aos="zoom-in" data-aos-duration="1000" />
                             </label>
                         </div>
                         <div class="transform transition duration-500 hover:scale-110 p-5 rounded-full border-2 border-transparent relative group" id="woman">
                             <label class="flex flex-col items-center relative">
                                 <input type="radio" name="gender" value="woman" class="hidden" onchange="toggleBackground(this)">
                                 <h2 class="text-center text-secondary font-bold absolute inset-0 grid place-items-center opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10">Without penis</h2>
-                                <img class="woman-front cursor-pointer opacity-100 group-hover:opacity-15 transition-opacity duration-500 mx-auto" src="/assets/images/website_Images/woman_front.svg" alt="Woman silhouette" data-aos="zoom-in" data-aos-duration="1000" />
+                                <img class="woman-front cursor-pointer opacity-100 group-hover:opacity-15 transition-opacity duration-500 mx-auto w-16 h-16 sm:w-24 sm:h-24 md:w-32 md:h-32" src="/assets/images/website_Images/woman_front.svg" alt="Woman silhouette" data-aos="zoom-in" data-aos-duration="1000" />
                             </label>
                         </div>
                     </div>
                 </div>
                 <!-- question 2 -->
-                <div class="question transition-opacity duration-500 ease-in-out opacity-0 hidden h-full mb-10" id="question2">
-                    <div class="flex flex-col items-center space-y-1 mb-12" data-aos="zoom-in" data-aos-duration="1000">
+                <div class="question transition-opacity duration-500 ease-in-out opacity-0 hidden h-auto md:h-96 mb-10" id="question2">
+                    <div class="text-center flex flex-col items-center space-y-1 mb-12" data-aos="zoom-in" data-aos-duration="1000">
                         <h3 class="<?php echo $gradients; ?>">Second question</h3>
                         <h2 class="<?php echo $gradients; ?>">How many people need to be involved in total?</h2>
                     </div>
-                    <div class="flex flex-row justify-evenly w-full divide-x divide-secondary">
-
-                        <div class="flex flex-col text-center items-center me-3" id="howMuchMan" data-aos="zoom-in" data-aos-duration="1000">
+                    <div class="flex flex-col md:flex-row justify-evenly w-full md:divide-x md:divide-secondary space-y-6 md:space-y-0">
+                        <div class="flex flex-col text-center items-center flex-grow" id="howMuchMan" data-aos="zoom-in" data-aos-duration="1000">
                             <div class="self-center">
                                 <p class="mb-3">People <span class="underline underline-offset-4 decoration-solid decoration-secondary font-extrabold text-lg ">with</span> a penis</p>
                                 <div class="flex items-center justify-center space-x-2">
@@ -76,7 +82,7 @@ $gradients = getRandomGradientClass(true);
                             </div>
                         </div>
 
-                        <div class="flex flex-col text-center items-center ms-3" id="howMuchWoman" data-aos="zoom-in" data-aos-duration="1000">
+                        <div class="flex flex-col text-center items-center flex-grow" id="howMuchWoman" data-aos="zoom-in" data-aos-duration="1000">
                             <div class="self-center">
                                 <p class="mb-3">People <span class="underline underline-offset-4 decoration-solid decoration-secondary font-extrabold text-lg ">without</span> a penis</p>
                                 <div class="flex items-center justify-center space-x-2">
@@ -93,31 +99,34 @@ $gradients = getRandomGradientClass(true);
                     </div>
                 </div>
                 <!-- 3 questions -->
-                <div class="question transition-opacity duration-500 ease-in-out opacity-0 hidden h-full mb-10" id="question3">
-                    <div class="flex flex-col items-center space-y-1 mb-12" data-aos="zoom-in" data-aos-duration="1000">
+                <div class="question transition-opacity duration-500 ease-in-out opacity-0 hidden h-auto md:h-96 mb-10 " id="question3">
+                    <div class="text-center flex flex-col items-center space-y-1 mb-12" data-aos="zoom-in" data-aos-duration="1000">
                         <h3 class="<?php echo $gradients; ?>">third question</h3>
                         <h2 class="<?php echo $gradients; ?>">Is there a performer that you want to include or exclude?</h2>
                     </div>
                     <div class="flex flex-col items-center space-y-4">
-                        <input type="text" id="searchBar" placeholder="Search by name" class="text-TextWhite bg-transparent border-b-2 border-secondary focus:outline-none focus:border-primairy">
-                        <div class="flex space-x-4">
-                            <label class="flex items-center space-x-2">
+                        <input type="text" id="searchBar" placeholder="Search by name" class="text-TextWhite bg-transparent border-2 border-secondary focus:outline-none rounded">
+                        <div class="flex justify-between gap-4 w-1/4">
+                            <label class="flex justify-between items-center gap-2">
                                 <input type="checkbox" id="searchMan" class="text-secondary">
                                 <span>Man</span>
                             </label>
-                            <label class="flex items-center space-x-2">
+                            <label class="flex justify-between items-center gap-2">
                                 <input type="checkbox" id="searchWoman" class="text-secondary">
                                 <span>Woman</span>
                             </label>
                         </div>
+                        <div class="flex flex-wrap gap-2 w-full max-w-3xl justify-center align-center" id="taggs">
+                            <!-- Tags will be inserted here -->
+                        </div>
                         <table class="table-auto border-collapse w-full text-TextWhite">
-                            <thead class="mb-4">
-                                <tr>
-                                    <th class="px-4 py-2 text-center border border-slate-500">Image</th>
-                                    <th class="px-4 py-2 text-end border border-slate-500">Name</th>
+                            <thead>
+                                <tr class="border-b border-secondary">
+                                    <th class="flex justify-center px-4 py-2 text-center border-r border-secondary w-full whitespace-nowrap">Image</th>
+                                    <th class="px-4 py-2 text-end w-1/2 whitespace-nowrap">Name</th>
                                 </tr>
                             </thead>
-                            <tbody id="searchResults" class="first:mt-5">
+                            <tbody id="searchResults" class="divide-y divide-secondary">
                                 <!-- Search results will be inserted here -->
                             </tbody>
                         </table>
@@ -125,9 +134,18 @@ $gradients = getRandomGradientClass(true);
                 </div>
 
                 <!-- Add more questions here -->
+                <div class="question transition-opacity duration-500 ease-in-out opacity-0 hidden h-auto md:h-96 mb-10 " id="question3">
+                    <div class="text-center flex flex-col items-center space-y-1 mb-12" data-aos="zoom-in" data-aos-duration="1000">
+                        <h3 class="<?php echo $gradients; ?>">fourth question</h3>
+                        <h2 class="<?php echo $gradients; ?>">Is there a performer that you want to include or exclude?</h2>
+                    </div>
+                    <div class="flex flex-col items-center space-y-4">
+
+                    </div>
+                </div>
             </div>
-            <div class="flex flex-col self-center justify-self-center items-center justify-center space-y-4 aos-init aos-animate w-fit h-fit" data-aos="fade-left" data-aos-duration="1000">
-                <button type="button" class="rounded-full border-2 border-secondary p-5 hover:bg-secondary hover:border-primairy hover:border-2 hover:text-gray-950 transition duration-500 ease-in-out" onclick="nextQuestion()">
+            <div class="flex flex-col self-center justify-self-center items-center justify-center space-y-4 aos-init aos-animate w-fit h-fit mb-6 md:mb-0 no-aos-mobile" data-aos="fade-left" data-aos-duration="1000">
+                <button type="button" class="rounded-full border-2 border-secondary p-3 sm:p-5 hover:bg-secondary hover:border-primairy hover:border-2 hover:text-gray-950 transition duration-500 ease-in-out" onclick="nextQuestion()">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
                         <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
                     </svg>
@@ -140,9 +158,17 @@ $gradients = getRandomGradientClass(true);
     ?>
 
     <script>
-        let currentQuestion = parseInt(new URLSearchParams(window.location.search).get('question')) || 0;
+        let currentQuestion = (() => {
+            const param = parseInt(new URLSearchParams(window.location.search).get('question'));
+            // Check if param is a valid number and within bounds (0 to number of questions - 1)
+            if (isNaN(param) || param < 0 || param >= document.querySelectorAll('.question').length) {
+                return 0; // Default to first question if invalid
+            }
+            return param;
+        })();
         const questions = document.querySelectorAll('.question');
         let debounceTimer; // Define debounceTimer
+        let isNavigating = false; // Lock flag for navigation
 
         function toggleBackground(radio) {
             const radios = document.querySelectorAll('input[name="gender"]');
@@ -160,6 +186,9 @@ $gradients = getRandomGradientClass(true);
         }
 
         function showQuestion(index) {
+            // Ensure index stays within bounds
+            index = Math.max(0, Math.min(index, questions.length - 1));
+            
             questions.forEach((question, i) => {
                 if (i === index) {
                     question.classList.add('opacity-100');
@@ -174,29 +203,33 @@ $gradients = getRandomGradientClass(true);
         }
 
         function nextQuestion() {
-            if (currentQuestion < questions.length - 1) {
-                questions[currentQuestion].classList.remove('opacity-100');
-                questions[currentQuestion].classList.add('opacity-0');
-                setTimeout(() => {
-                    questions[currentQuestion].classList.add('hidden');
-                    currentQuestion++;
-                    localStorage.setItem('currentQuestion', currentQuestion);
-                    showQuestion(currentQuestion);
-                }, 500);
-            }
+            if (isNavigating || currentQuestion >= questions.length - 1) return;
+            isNavigating = true;
+
+            questions[currentQuestion].classList.remove('opacity-100');
+            questions[currentQuestion].classList.add('opacity-0');
+            setTimeout(() => {
+                questions[currentQuestion].classList.add('hidden');
+                currentQuestion = Math.min(currentQuestion + 1, questions.length - 1);
+                localStorage.setItem('currentQuestion', currentQuestion);
+                showQuestion(currentQuestion);
+                isNavigating = false;
+            }, 500);
         }
 
         function prevQuestion() {
-            if (currentQuestion > 0) {
-                questions[currentQuestion].classList.remove('opacity-100');
-                questions[currentQuestion].classList.add('opacity-0');
-                setTimeout(() => {
-                    questions[currentQuestion].classList.add('hidden');
-                    currentQuestion--;
-                    localStorage.setItem('currentQuestion', currentQuestion);
-                    showQuestion(currentQuestion);
-                }, 500);
-            }
+            if (isNavigating || currentQuestion <= 0) return;
+            isNavigating = true;
+
+            questions[currentQuestion].classList.remove('opacity-100');
+            questions[currentQuestion].classList.add('opacity-0');
+            setTimeout(() => {
+                questions[currentQuestion].classList.add('hidden');
+                currentQuestion = Math.max(currentQuestion - 1, 0);
+                localStorage.setItem('currentQuestion', currentQuestion);
+                showQuestion(currentQuestion);
+                isNavigating = false;
+            }, 500);
         }
 
         function checkButtons() {
@@ -308,6 +341,7 @@ $gradients = getRandomGradientClass(true);
             img.classList.add('duration-500');
             img.classList.add('mx-auto');
             img.classList.add('size-3/4');
+            img.classList.add('w-16','h-16','sm:w-24','sm:h-24','md:w-32','md:h-32');
             container.appendChild(img);
         }
 
@@ -376,6 +410,7 @@ $gradients = getRandomGradientClass(true);
         const searchResults = document.getElementById('searchResults');
 
         let eventSource;
+        let selectedPerformerIds = new Set();
 
         function startSSE() {
             if (eventSource) {
@@ -443,32 +478,117 @@ $gradients = getRandomGradientClass(true);
             }
 
             const defaultImage = 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'white\' stroke-width=\'2\'%3E%3Ccircle cx=\'12\' cy=\'8\' r=\'5\'/%3E%3Cpath d=\'M3 21v-2a7 7 0 0 1 14 0v2\'/%3E%3C/svg%3E';
-
+            
             try {
-                searchResults.innerHTML = data.map(performer => {
-                    // Sanitize the image URL
-                    let imageUrl = performer.image_url;
-                    if (!imageUrl) {
-                        imageUrl = defaultImage;
+                const filteredData = data.filter(performer => !selectedPerformerIds.has(performer.performer_id));
+                
+                // Preload first 5 images
+                const preloadImages = filteredData.slice(0, 5).map(performer => {
+                    if (performer.image_url) {
+                        const img = new Image();
+                        img.src = performer.image_url;
+                        return img;
                     }
+                    return null;
+                });
 
+                searchResults.innerHTML = filteredData.map((performer, index) => {
+                    let imageUrl = performer.image_url || defaultImage;
+                    let performerId = performer.performer_id || performer.id;
+                    
                     return `
-                        <tr>
-                            <td class="flex justify-center px-4 py-2 border-r border-slate-500">
-                                <div class="w-16 h-16 rounded-full overflow-hidden group">
-                                    <img src="${imageUrl}" 
+                        <tr class="performer-row cursor-pointer transition-colors duration-300 hover:bg-secondary/20 border-b border-secondary" 
+                            data-performer-id="${performerId || ''}"
+                            data-performer-name="${performer.name || ''}"
+                            onclick="togglePerformerSelection(this)">
+                            <td class="flex justify-center px-4 py-2 border-r border-secondary">
+                                <div class="w-16 h-16 rounded-none overflow-hidden group rounded-[50%]">
+                                    <img src="${index < 5 ? imageUrl : defaultImage}" 
+                                         data-src="${imageUrl}"
                                          alt="${performer.name}" 
-                                         class="w-full h-full object-cover blur-sm transition-all duration-300 group-hover:blur-none"
-                                         onerror="this.onerror=null; this.src='${defaultImage}';">
+                                         class="w-full h-full rounded-[50%] blur-sm transition-all duration-300 group-hover:blur-none ${index >= 5 ? 'lazy' : ''}"
+                                         loading="${index < 5 ? 'eager' : 'lazy'}" style="clip-path: circle(50%);"
+                                         >
                                 </div>
                             </td>
                             <td class="px-4 py-2 text-end">${performer.name}</td>
                         </tr>
                     `;
                 }).join('');
+
+                // Initialize lazy loading for images
+                initializeLazyLoading();
+
             } catch (error) {
                 console.error('Error rendering results:', error);
                 searchResults.innerHTML = '<tr><td colspan="2" class="text-center py-4">Error displaying results</td></tr>';
+            }
+        }
+
+        // Add this new function for lazy loading
+        function initializeLazyLoading() {
+            const lazyImages = document.querySelectorAll('img.lazy');
+            
+            const imageObserver = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const img = entry.target;
+                        img.src = img.dataset.src;
+                        img.classList.remove('lazy');
+                        observer.unobserve(img);
+                    }
+                });
+            }, {
+                rootMargin: '50px 0px',
+                threshold: 0.1
+            });
+
+            lazyImages.forEach(img => imageObserver.observe(img));
+        }
+
+        function createTag(performerId, performerName) {
+            return `
+                <div class="flex items-center space-x-2 px-3 py-1 bg-darkPrimairy border-2 border-secondary rounded-full text-sm transition-all duration-300 hover:border-primairy">
+                    <span>${performerName}</span>
+                    <button type="button" onclick="removePerformer('${performerId}', this.parentElement)" class="text-secondary hover:text-primairy transition-colors duration-300">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                </div>
+            `;
+        }
+
+        function removePerformer(performerId, tagElement) {
+            selectedPerformerIds.delete(performerId);
+            tagElement.remove();
+            // Refresh the search to show the removed performer
+            startSSE();
+        }
+
+        function togglePerformerSelection(row) {
+            try {
+                const performerId = row.dataset.performerId;
+                const performerName = row.dataset.performerName;
+                
+                if (!performerId) {
+                    console.warn('No performer ID found for:', performerName);
+                    return;
+                }
+
+                // Add to selected performers set
+                selectedPerformerIds.add(performerId);
+                
+                // Add tag
+                const tagsContainer = document.getElementById('taggs');
+                tagsContainer.insertAdjacentHTML('beforeend', createTag(performerId, performerName));
+                
+                // Remove from search results
+                row.remove();
+                
+                console.log('Selected performers:', Array.from(selectedPerformerIds));
+            } catch (error) {
+                console.error('Error toggling performer selection:', error);
             }
         }
 

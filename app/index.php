@@ -8,9 +8,9 @@ $gradients =   getRandomGradientClass(true);
 <body class="text-TextWhite">
     <header>
         <div class="mt-10 flex flex-col items-center justify-center space-y-2" data-aos="fade-down" data-aos-duration="1000">
-            <h1 class="text-4xl font-bold <?php echo $gradients; ?>" data-aos="fade-down" data-aos-duration="1000">Welcome to <?php echo $siteName; ?></h1>
-            <h2 class="<?php echo $gradients; ?>" data-aos="fade-down" data-aos-duration="1000">Choose the following options to customize your search results</h2>
-            <h3 class="<?php echo $gradients; ?>" data-aos="fade-down" data-aos-duration="1000">Please follow the step by step guide</h3>
+            <h1 class="text-4xl font-bold <?php echo $gradients; ?> text-center" data-aos="fade-down" data-aos-duration="1000">Welcome to <?php echo $siteName; ?></h1>
+            <h2 class="<?php echo $gradients; ?> text-center" data-aos="fade-down" data-aos-duration="1000">Choose the following options to customize your search results</h2>
+            <h3 class="<?php echo $gradients; ?> text-center" data-aos="fade-down" data-aos-duration="1000">Please follow the step by step guide</h3>
         </div>
     </header>
     <main>
