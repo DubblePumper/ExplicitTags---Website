@@ -68,34 +68,40 @@ $gradients = getRandomGradientClass(true);
                         <h2 class="<?php echo $gradients; ?>">How many people need to be involved in total?</h2>
                     </div>
                     <div class="flex flex-col md:flex-row justify-evenly w-full md:divide-x md:divide-secondary space-y-6 md:space-y-0">
+                        <!-- "With a penis" slider -->
                         <div class="flex flex-col text-center items-center flex-grow" id="howMuchMan" data-aos="zoom-in" data-aos-duration="1000">
-                            <div class="self-center">
-                                <p class="mb-3">People <span class="underline underline-offset-4 decoration-solid decoration-secondary font-extrabold text-lg ">with</span> a penis</p>
-                                <div class="flex items-center justify-center space-x-2">
-                                    <button id="minButtonMan" type="button" class="rounded-full border-2 border-secondaryDarker py-3 px-5 hover:bg-secondaryDarker hover:border-primairy hover:border-2 hover:text-gray-950 transition duration-500 ease-in-out" onclick="decrement('manCount')">-</button>
-                                    <input type="number" id="manCount" name="manCount" value="1" min="0" max="99" class="text-TextWhite mx-3 w-11 text-center bg-transparent border-transparent focus:border-0 focus:outline-none focus:ring-0 active:bg-transparent focus-within:bg-transparent">
-                                    <button type="button" id="plusButtonMan" class="rounded-full border-2 border-secondaryDarker py-3 px-5 hover:bg-secondaryDarker hover:border-primairy hover:border-2 hover:text-gray-950 transition duration-500 ease-in-out" onclick="increment('manCount','manCountPlus')">+</button>
+                            <p class="mb-3">People <span class="underline underline-offset-4 decoration-solid decoration-secondary font-extrabold text-lg">with</span> a penis</p>
+                            <div class="flex flex-col items-center space-y-2">
+                                <div class="flex space-x-4">
+                                    <div class="flex flex-col items-center space-y-1">
+                                        <label for="manMin">Min</label>
+                                        <input type="number" id="manMin" min="0" max="99" value="0" class="w-16 text-center bg-transparent border border-secondaryDarker rounded" />
+                                    </div>
+                                    <div class="flex flex-col items-center space-y-1">
+                                        <label for="manMax">Max</label>
+                                        <input type="number" id="manMax" min="0" max="99" value="1" class="w-16 text-center bg-transparent border border-secondaryDarker rounded" />
+                                    </div>
                                 </div>
                             </div>
-                            <div id="manIMG" class="grid gap-4 items-center justify-center mt-4 w-[239.828px]">
-
-                            </div>
+                            <div id="manIMG" class="grid gap-4 items-center justify-center mt-4 w-[239.828px]"></div>
                         </div>
-
+                        <!-- "Without a penis" slider -->
                         <div class="flex flex-col text-center items-center flex-grow" id="howMuchWoman" data-aos="zoom-in" data-aos-duration="1000">
-                            <div class="self-center">
-                                <p class="mb-3">People <span class="underline underline-offset-4 decoration-solid decoration-secondary font-extrabold text-lg ">without</span> a penis</p>
-                                <div class="flex items-center justify-center space-x-2">
-                                    <button id="minButtonWoman" type="button" class="rounded-full border-2 border-secondaryDarker py-3 px-5 hover:bg-secondaryDarker hover:border-primairy hover:border-2 hover:text-gray-950 transition duration-500 ease-in-out" onclick="decrement('womanCount')">-</button>
-                                    <input type="number" id="womanCount" name="womanCount" value="1" min="0" max="99" class="text-TextWhite mx-3 w-11 text-center bg-transparent border-transparent focus:border-0 focus:outline-none focus:ring-0 active:bg-transparent focus-within:bg-transparent">
-                                    <button type="button" id="plusButtonWoman" class="rounded-full border-2 border-secondaryDarker py-3 px-5 hover:bg-secondaryDarker hover:border-primairy hover:border-2 hover:text-gray-950 transition duration-500 ease-in-out" onclick="increment('womanCount','womanCountPlus')">+</button>
+                            <p class="mb-3">People <span class="underline underline-offset-4 decoration-solid decoration-secondary font-extrabold text-lg">without</span> a penis</p>
+                            <div class="flex flex-col items-center space-y-2">
+                                <div class="flex space-x-4">
+                                    <div class="flex flex-col items-center space-y-1">
+                                        <label for="womanMin">Min</label>
+                                        <input type="number" id="womanMin" min="0" max="99" value="0" class="w-16 text-center bg-transparent border border-secondaryDarker rounded" />
+                                    </div>
+                                    <div class="flex flex-col items-center space-y-1">
+                                        <label for="womanMax">Max</label>
+                                        <input type="number" id="womanMax" min="0" max="99" value="1" class="w-16 text-center bg-transparent border border-secondaryDarker rounded" />
+                                    </div>
                                 </div>
                             </div>
-                            <div id="womanIMG" class="grid gap-4 items-center justify-center mt-4 w-[239.828px]">
-
-                            </div>
+                            <div id="womanIMG" class="grid gap-4 items-center justify-center mt-4 w-[239.828px]"></div>
                         </div>
-
                     </div>
                 </div>
                 <!-- 3 questions -->
@@ -106,7 +112,7 @@ $gradients = getRandomGradientClass(true);
                     </div>
                     <div class="flex flex-col items-center space-y-4">
                         <input type="text" id="searchBar" placeholder="Search by name" class="text-TextWhite bg-transparent border-2 border-secondary focus:outline-none rounded">
-                        <div class="flex justify-between gap-4 w-1/4">
+                        <div class="flex justify-between gap-4 w-48">
                             <label class="flex justify-between items-center gap-2">
                                 <input type="checkbox" id="searchMan" class="text-secondary">
                                 <span>Man</span>
@@ -116,8 +122,10 @@ $gradients = getRandomGradientClass(true);
                                 <span>Woman</span>
                             </label>
                         </div>
-                        <div class="flex flex-wrap gap-2 w-full max-w-3xl justify-center align-center" id="taggs">
-                            <!-- Tags will be inserted here -->
+                        <div class="flex flex-wrap gap-2 w-full max-w-3xl justify-center align-center">
+                            <!-- New containers for included and excluded performer tags -->
+                            <div id="taggsIncluded" class="flex flex-wrap gap-2"></div>
+                            <div id="taggsExcluded" class="flex flex-wrap gap-2"></div>
                         </div>
                         <table class="table-auto border-collapse w-full text-TextWhite">
                             <thead>
@@ -252,89 +260,10 @@ $gradients = getRandomGradientClass(true);
         // Question 2
         // -----------------------------------
 
-        // Declare manCount and womanCount before using them
-        let manCount = document.getElementById('manCount');
-        let womanCount = document.getElementById('womanCount');
-
-        // woman and man img parent id
-        let manIMG = document.getElementById('manIMG');
-        let womanIMG = document.getElementById('womanIMG');
-
-        let manCountValue = parseInt(manCount.value);
-        let womanCountValue = parseInt(womanCount.value);
-
-        // define global min/max values
-        let manMin = parseInt(manCount.getAttribute('min'));
-        let manMax = parseInt(manCount.getAttribute('max'));
-        let womanMin = parseInt(womanCount.getAttribute('min'));
-        let womanMax = parseInt(womanCount.getAttribute('max'));
-
-        // fix button references
-        let plusBtnMan = document.getElementById('plusButtonMan');
-        let minBtnMan = document.getElementById('minButtonMan');
-        let plusBtnWoman = document.getElementById('plusButtonWoman');
-        let minBtnWoman = document.getElementById('minButtonWoman');
-
-        // 2. Then add event listeners
-        manCount.addEventListener('change', function() {
-            updateButtonState(manCount, manMin, manMax, minBtnMan, plusBtnMan);
-
-            let value = parseInt(manCount.value);
-            let manImages = manIMG.querySelectorAll('img').length;
-
-            // Ensure the number of images matches the input value
-            while (manImages < value) {
-                addImage(manIMG, '/assets/images/website_Images/man_front.svg', 'man-front');
-                manImages++;
-            }
-            while (manImages > value) {
-                manIMG.removeChild(manIMG.lastChild);
-                manImages--;
-            }
-
-            updateGridColumns(manIMG, manImages);
-            manCountValue = value;
-        });
-
-        womanCount.addEventListener('change', function() {
-            updateButtonState(womanCount, womanMin, womanMax, minBtnWoman, plusBtnWoman);
-
-            let value = parseInt(womanCount.value);
-            let womanImages = womanIMG.querySelectorAll('img').length;
-
-            // Ensure the number of images matches the input value
-            while (womanImages < value) {
-                addImage(womanIMG, '/assets/images/website_Images/woman_front.svg', 'woman-front');
-                womanImages++;
-            }
-            while (womanImages > value) {
-                womanIMG.removeChild(womanIMG.lastChild);
-                womanImages--;
-            }
-
-            updateGridColumns(womanIMG, womanImages);
-            womanCountValue = value;
-        });
-
-        window.addEventListener('DOMContentLoaded', function() {
-            // when page load, check value of manCount and womanCount. add the number of images based on the value
-            for (let i = 0; i < manCountValue; i++) {
-                addImage(manIMG, '/assets/images/website_Images/man_front.svg', 'man-front');
-            }
-
-            for (let i = 0; i < womanCountValue; i++) {
-                addImage(womanIMG, '/assets/images/website_Images/woman_front.svg', 'woman-front');
-            }
-
-            updateGridColumns(manIMG, manCountValue);
-            updateGridColumns(womanIMG, womanCountValue);
-        });
-
         function addImage(container, src, className) {
             let img = document.createElement('img');
             img.src = src;
             img.classList.add(className);
-            img.classList.add('cursor-pointer');
             img.classList.add('opacity-100');
             img.classList.add('group-hover:opacity-15');
             img.classList.add('transition-opacity');
@@ -345,48 +274,49 @@ $gradients = getRandomGradientClass(true);
             container.appendChild(img);
         }
 
-        function updateButtonState(input, minVal, maxVal, minBtn, plusBtn) {
-            let value = parseInt(input.value);
-            if (value >= maxVal) {
-                plusBtn.disabled = true;
-                plusBtn.classList.add('opacity-50', 'pointer-events-none');
-                input.value = maxVal;
-            } else {
-                plusBtn.disabled = false;
-                plusBtn.classList.remove('opacity-50', 'pointer-events-none');
+        // Two-way slider initialization
+        document.addEventListener('DOMContentLoaded', () => {
+            const manMinInput = document.getElementById('manMin');
+            const manMaxInput = document.getElementById('manMax');
+            const manIMG = document.getElementById('manIMG');
+
+            const womanMinInput = document.getElementById('womanMin');
+            const womanMaxInput = document.getElementById('womanMax');
+            const womanIMG = document.getElementById('womanIMG');
+
+            function updateManImages() {
+                while (manIMG.firstChild) {
+                    manIMG.removeChild(manIMG.firstChild);
+                }
+                const maxVal = parseInt(manMaxInput.value) || 0;
+                for (let i = 0; i < maxVal; i++) {
+                    addImage(manIMG, '/assets/images/website_Images/man_front.svg', 'man-front');
+                }
+                updateGridColumns(manIMG, maxVal);
             }
 
-            if (value <= minVal) {
-                minBtn.disabled = true;
-                minBtn.classList.add('opacity-50', 'pointer-events-none');
-                input.value = minVal;
-            } else {
-                minBtn.disabled = false;
-                minBtn.classList.remove('opacity-50', 'pointer-events-none');
+            function updateWomanImages() {
+                while (womanIMG.firstChild) {
+                    womanIMG.removeChild(womanIMG.firstChild);
+                }
+                const maxVal = parseInt(womanMaxInput.value) || 0;
+                for (let i = 0; i < maxVal; i++) {
+                    addImage(womanIMG, '/assets/images/website_Images/woman_front.svg', 'woman-front');
+                }
+                updateGridColumns(womanIMG, maxVal);
             }
-        }
 
-        function increment(id) {
-            let input = document.getElementById(id);
-            let maxVal = (id === 'manCount') ? manMax : womanMax;
-            if (parseInt(input.value) < maxVal) {
-                input.value = parseInt(input.value) + 1;
-                input.dispatchEvent(new Event('change')); // Trigger change event
-            } else if (parseInt(input.value) === maxVal) {
-                input.value = maxVal;
-                input.dispatchEvent(new Event('change')); // Trigger change event
-            }
-        }
+            manMinInput.addEventListener('input', updateManImages);
+            manMaxInput.addEventListener('input', updateManImages);
+            womanMinInput.addEventListener('input', updateWomanImages);
+            womanMaxInput.addEventListener('input', updateWomanImages);
 
-        function decrement(id) {
-            let input = document.getElementById(id);
-            let minVal = (id === 'manCount') ? manMin : womanMin;
-            if (parseInt(input.value) > minVal) {
-                input.value = parseInt(input.value) - 1;
-                input.dispatchEvent(new Event('change')); // Trigger change event
-            }
-        }
+            // Trigger image updates on page load
+            updateManImages();
+            updateWomanImages();
+        });
 
+        // Keep or adapt this function for your dynamic grid columns as needed
         function updateGridColumns(container, count) {
             if (count === 1) {
                 container.classList.add('grid-cols-1');
@@ -411,6 +341,8 @@ $gradients = getRandomGradientClass(true);
 
         let eventSource;
         let selectedPerformerIds = new Set();
+        let includedPerformerIds = new Set();
+        let excludedPerformerIds = new Set();
 
         function startSSE() {
             if (eventSource) {
@@ -497,21 +429,27 @@ $gradients = getRandomGradientClass(true);
                     let performerId = performer.performer_id || performer.id;
                     
                     return `
-                        <tr class="performer-row cursor-pointer transition-colors duration-300 hover:bg-secondary/20 border-b border-secondary" 
+                        <tr class="performer-row cursor-pointer group relative transition-colors duration-300 hover:bg-secondary/20 border-b border-secondary"
                             data-performer-id="${performerId || ''}"
-                            data-performer-name="${performer.name || ''}"
-                            onclick="togglePerformerSelection(this)">
+                            data-performer-name="${performer.name || ''}">
                             <td class="flex justify-center px-4 py-2 border-r border-secondary">
-                                <div class="w-16 h-16 rounded-none overflow-hidden group rounded-[50%]">
-                                    <img src="${index < 5 ? imageUrl : defaultImage}" 
-                                         data-src="${imageUrl}"
+                                <div class="w-16 h-16 rounded-[50%] overflow-hidden">
+                                    <img src="${index < 5 ? imageUrl : defaultImage}" data-src="${imageUrl}"
                                          alt="${performer.name}" 
-                                         class="w-full h-full rounded-[50%] blur-sm transition-all duration-300 group-hover:blur-none ${index >= 5 ? 'lazy' : ''}"
-                                         loading="${index < 5 ? 'eager' : 'lazy'}" style="clip-path: circle(50%);"
-                                         >
+                                         class="w-full h-full blur-sm transition-all duration-300 group-hover:blur-none ${index >= 5 ? 'lazy' : ''}"
+                                         style="clip-path: circle(50%);" loading="${index < 5 ? 'eager' : 'lazy'}">
                                 </div>
                             </td>
-                            <td class="px-4 py-2 text-end">${performer.name}</td>
+                            <td class="px-4 py-2 text-end relative">
+                                ${performer.name}
+                                <!-- Buttons appear on row hover -->
+                                <div class="hidden group-hover:flex absolute right-0 top-1/2 -translate-y-1/2 space-x-2">
+                                    <button type="button" onclick="includePerformer('${performerId}','${performer.name}', this)"
+                                        class="bg-green-600 text-white px-2 py-1 rounded">Include</button>
+                                    <button type="button" onclick="excludePerformer('${performerId}','${performer.name}', this)"
+                                        class="bg-red-600 text-white px-2 py-1 rounded">Exclude</button>
+                                </div>
+                            </td>
                         </tr>
                     `;
                 }).join('');
@@ -546,17 +484,19 @@ $gradients = getRandomGradientClass(true);
             lazyImages.forEach(img => imageObserver.observe(img));
         }
 
-        function createTag(performerId, performerName) {
-            return `
+        function createTag(performerId, performerName, type) {
+            const container = (type === 'Included') ? document.getElementById('taggsIncluded') : document.getElementById('taggsExcluded');
+            container.insertAdjacentHTML('beforeend', `
                 <div class="flex items-center space-x-2 px-3 py-1 bg-darkPrimairy border-2 border-secondary rounded-full text-sm transition-all duration-300 hover:border-primairy">
-                    <span>${performerName}</span>
-                    <button type="button" onclick="removePerformer('${performerId}', this.parentElement)" class="text-secondary hover:text-primairy transition-colors duration-300">
+                    <span>${performerName} (${type})</span>
+                    <button type="button" onclick="removeSelectedPerformer('${performerId}', this.parentElement, '${type}')"
+                        class="text-secondary hover:text-primairy transition-colors duration-300">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
                         </svg>
                     </button>
                 </div>
-            `;
+            `);
         }
 
         function removePerformer(performerId, tagElement) {
@@ -564,6 +504,28 @@ $gradients = getRandomGradientClass(true);
             tagElement.remove();
             // Refresh the search to show the removed performer
             startSSE();
+        }
+
+        function includePerformer(performerId, performerName, rowElement) {
+            includedPerformerIds.add(performerId);
+            createTag(performerId, performerName, 'Included');
+            rowElement.closest('tr').remove();
+        }
+
+        function excludePerformer(performerId, performerName, rowElement) {
+            excludedPerformerIds.add(performerId);
+            createTag(performerId, performerName, 'Excluded');
+            rowElement.closest('tr').remove();
+        }
+
+        function removeSelectedPerformer(performerId, tagElement, type) {
+            if (type === 'Included') {
+                includedPerformerIds.delete(performerId);
+            } else {
+                excludedPerformerIds.delete(performerId);
+            }
+            tagElement.remove();
+            // Optionally refresh or do something else
         }
 
         function togglePerformerSelection(row) {
