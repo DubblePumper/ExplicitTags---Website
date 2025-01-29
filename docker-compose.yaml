@@ -32,6 +32,6 @@ services:
       PMA_HOST: db
     restart: always
     ports:
-      - 8081:80
+      - 8081:81
 volumes:
   db_data:

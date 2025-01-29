@@ -75,11 +75,11 @@ $gradients = getRandomGradientClass(true);
                                 <div class="flex space-x-4">
                                     <div class="flex flex-col items-center space-y-1">
                                         <label for="manMin">Min</label>
-                                        <input type="number" id="manMin" min="0" max="99" value="0" class="w-16 text-center bg-transparent border border-secondaryDarker rounded" />
+                                        <input type="number" id="manMin" min="1" max="99" value="1" class="w-16 text-center bg-transparent border border-secondaryDarker rounded" />
                                     </div>
                                     <div class="flex flex-col items-center space-y-1">
                                         <label for="manMax">Max</label>
-                                        <input type="number" id="manMax" min="0" max="99" value="1" class="w-16 text-center bg-transparent border border-secondaryDarker rounded" />
+                                        <input type="number" id="manMax" min="1" max="99" value="1" class="w-16 text-center bg-transparent border border-secondaryDarker rounded" />
                                     </div>
                                 </div>
                             </div>
@@ -92,11 +92,11 @@ $gradients = getRandomGradientClass(true);
                                 <div class="flex space-x-4">
                                     <div class="flex flex-col items-center space-y-1">
                                         <label for="womanMin">Min</label>
-                                        <input type="number" id="womanMin" min="0" max="99" value="0" class="w-16 text-center bg-transparent border border-secondaryDarker rounded" />
+                                        <input type="number" id="womanMin" min="1" max="99" value="1" class="w-16 text-center bg-transparent border border-secondaryDarker rounded" />
                                     </div>
                                     <div class="flex flex-col items-center space-y-1">
                                         <label for="womanMax">Max</label>
-                                        <input type="number" id="womanMax" min="0" max="99" value="1" class="w-16 text-center bg-transparent border border-secondaryDarker rounded" />
+                                        <input type="number" id="womanMax" min="1" max="99" value="1" class="w-16 text-center bg-transparent border border-secondaryDarker rounded" />
                                     </div>
                                 </div>
                             </div>
@@ -278,10 +278,25 @@ $gradients = getRandomGradientClass(true);
         document.addEventListener('DOMContentLoaded', () => {
             const manMinInput = document.getElementById('manMin');
             const manMaxInput = document.getElementById('manMax');
+
+            const manMinInputMinValue = parseInt(manMinInput.getAttribute('min'));
+            const manMinInputMaxValue = parseInt(manMinInput.getAttribute('max'));
+
+
+            const manMaxInputMinValue = parseInt(manMaxInput.getAttribute('min'));
+            const manMaxInputMaxValue = parseInt(manMaxInput.getAttribute('max'));
+
             const manIMG = document.getElementById('manIMG');
 
             const womanMinInput = document.getElementById('womanMin');
             const womanMaxInput = document.getElementById('womanMax');
+
+            const womanMinInputMinValue = parseInt(womanMinInput.getAttribute('min'));
+            const womanMinInputMaxValue = parseInt(womanMinInput.getAttribute('max'));
+
+            const womanMaxInputMinValue = parseInt(womanMaxInput.getAttribute('min'));
+            const womanMaxInputMaxValue = parseInt(womanMaxInput.getAttribute('max'));
+
             const womanIMG = document.getElementById('womanIMG');
 
             function updateManImages() {
@@ -306,10 +321,36 @@ $gradients = getRandomGradientClass(true);
                 updateGridColumns(womanIMG, maxVal);
             }
 
-            manMinInput.addEventListener('input', updateManImages);
-            manMaxInput.addEventListener('input', updateManImages);
-            womanMinInput.addEventListener('input', updateWomanImages);
-            womanMaxInput.addEventListener('input', updateWomanImages);
+            function validateManInputs() {
+                if (parseInt(manMinInput.value) > parseInt(manMaxInput.value)) {
+                    manMaxInput.value = manMinInput.value;
+                }
+                if (parseInt(manMinInput.value) < manMinInputMinValue) {
+                    manMinInput.value = manMinInputMinValue;
+                }
+                if (parseInt(manMaxInput.value) > manMaxInputMaxValue) {
+                    manMaxInput.value = manMaxInputMaxValue;
+                }
+                updateManImages();
+            }
+
+            function validateWomanInputs() {
+                if (parseInt(womanMinInput.value) > parseInt(womanMaxInput.value)) {
+                    womanMaxInput.value = womanMinInput.value;
+                }
+                if (parseInt(womanMinInput.value) < womanMinInputMinValue) {
+                    womanMinInput.value = womanMinInputMinValue;
+                }
+                if (parseInt(womanMaxInput.value) > womanMaxInputMaxValue) {
+                    womanMaxInput.value = womanMaxInputMaxValue;
+                }
+                updateWomanImages();
+            }
+
+            manMinInput.addEventListener('input', validateManInputs);
+            manMaxInput.addEventListener('input', validateManInputs);
+            womanMinInput.addEventListener('input', validateWomanInputs);
+            womanMaxInput.addEventListener('input', validateWomanInputs);
 
             // Trigger image updates on page load
             updateManImages();
@@ -357,13 +398,48 @@ $gradients = getRandomGradientClass(true);
                     t: Date.now()
                 });
 
-                // Only start search if we have a search term
+                // Only start search if we have a search term or gender filter
                 if (searchTerm.length === 0 && !getGenderFilter()) {
                     searchResults.innerHTML = '<tr><td colspan="2" class="text-center py-4">Type to search...</td></tr>';
                     return;
                 }
 
-                eventSource = new EventSource(`/api/performers_sse.php?${params}`);
+                // Check if we're on localhost:8000
+                if (window.location.hostname === 'localhost' || window.location.hostname.includes('localhost')) {
+                    // Use local JSON file for localhost
+                    fetch('/performers_details_data.json')
+                        .then(response => response.json())
+                        .then(data => {
+                            // Filter the data based on search term and gender
+                            let filteredData = data.filter(performer => {
+                                if (!performer.name) return false;
+                                
+                                const nameMatch = !searchTerm || 
+                                    performer.name.toLowerCase().includes(searchTerm.toLowerCase());
+                                const genderMatch = !getGenderFilter() || 
+                                    performer.gender === getGenderFilter();
+                                
+                                return nameMatch && genderMatch;
+                            });
+
+                            // Limit results to 15
+                            filteredData = filteredData.slice(0, 15);
+                            updateSearchResults(filteredData);
+                        })
+                        .catch(error => {
+                            console.error('Search Error:', error);
+                            searchResults.innerHTML = '<tr><td colspan="2" class="text-center py-4">Error loading results</td></tr>';
+                        });
+                    return;
+                }
+
+                // Ensure HTTPS for production
+                const protocol = 'https:';
+                const host = window.location.host;
+                const sseUrl = `${protocol}//${host}/api/performers_sse.php?${params.toString()}`;
+
+                // Use SSE for production with full HTTPS URL
+                eventSource = new EventSource(sseUrl);
                 let reconnectAttempts = 0;
                 const maxReconnectAttempts = 3;
 
@@ -492,7 +568,7 @@ $gradients = getRandomGradientClass(true);
                     <button type="button" onclick="removeSelectedPerformer('${performerId}', this.parentElement, '${type}')"
                         class="text-secondary hover:text-primairy transition-colors duration-300">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414z" clip-rule="evenodd" />
                         </svg>
                     </button>
                 </div>
