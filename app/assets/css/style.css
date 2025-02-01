@@ -35,3 +35,70 @@ input[type=number] {
 appearance: textfield;
 }
 
+.rounded-full img {
+    object-fit: contain;
+    border-radius: 50%;
+}
+
+@media (max-width: 768px) {
+    .no-aos-mobile {
+        opacity: 1 !important;
+        transform: none !important;
+        transition: none !important;
+    }
+}
+
+#searchWoman input[type="checkbox"]::before {
+    transform-origin: bottom left;
+    clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+}
+
+#searchMan input[type="checkbox"]::before {
+    transform-origin: bottom left;
+    clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+}
+
+/* Custom checkbox styling */
+input[type="checkbox"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 1.2rem;
+    height: 1.2rem;
+    border: 2px solid #40a6ea;
+    border-radius: 0.5rem;
+    margin-right: 0.5rem;
+    position: relative;
+    cursor: pointer;
+    background: transparent;
+    transition: all 0.3s ease;
+}
+
+input[type="checkbox"]:checked {
+    background-color: #40a6ea;
+}
+
+input[type="checkbox"]:checked::before {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #1a1a1a;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+#searchResults {
+    scrollbar-width: thin; /* Firefox */
+    scrollbar-color: #40a6ea #0d0d0d;
+}
+#searchResults::-webkit-scrollbar {
+    width: 8px;
+}
+#searchResults::-webkit-scrollbar-track {
+    background: #0d0d0d;
+}
+#searchResults::-webkit-scrollbar-thumb {
+    background-color: #40a6ea;
+    border-radius: 4px;
+}
+

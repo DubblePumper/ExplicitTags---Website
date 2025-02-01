@@ -75,7 +75,7 @@
         integrity="sha256-kmHvs0B+OpCW5GVHUNjv9rOmY0IvSIRcf7zGUDTDQM8="
         crossorigin="anonymous"></script>
     <!-- Stylesheets and fonts -->
-    <link rel="stylesheet" type="text/css" href="/assets/css/style.css">
+    <link rel="stylesheet" type="text/css" href="/assets/css/style.css?v=<?php echo time();?>">
     <link href="https://fonts.googleapis.com/css?family=Helvetica|Roboto" rel="stylesheet">
 
     <!-- Favicon links -->

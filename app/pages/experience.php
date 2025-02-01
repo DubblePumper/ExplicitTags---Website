@@ -6,20 +6,6 @@ $gradients = getRandomGradientClass(true);
 // Make sure you have no environment or config forcing "http://"
 ?>
 
-<style>
-    .rounded-full img {
-        object-fit: contain;
-        border-radius: 50%;
-    }
-    @media (max-width: 768px) {
-        .no-aos-mobile {
-            opacity: 1 !important;
-            transform: none !important;
-            transition: none !important;
-        }
-    }
-</style>
-
 <body class="text-TextWhite">
     <header>
         <div class="text-center mt-10 flex flex-col items-center justify-center space-y-2" data-aos="fade-down" data-aos-duration="1000">
@@ -28,7 +14,7 @@ $gradients = getRandomGradientClass(true);
             <h3 class="<?php echo $gradients; ?>" data-aos="fade-down" data-aos-duration="1000">And guess what... We will find it for you</h3>
         </div>
     </header>
-    <main class="overflow-y-auto min-h-screen">
+    <main class="min-h-screen">
         <form class="flex flex-col md:flex-row justify-evenly mt-20 w-full space-y-4 md:space-y-0" id="experienceForm">
             <div class="flex flex-col self-center justify-self-center items-center justify-center space-y-4 aos-init aos-animate w-fit h-fit no-aos-mobile" data-aos="fade-right" data-aos-duration="1000">
                 <button id="prevButton" type="button" class="rounded-full border-2 border-secondary p-3 sm:p-5 hover:bg-secondary hover:border-primairy hover:border-2 hover:text-gray-950 transition duration-500 ease-in-out" onclick="prevQuestion()">
@@ -39,7 +25,7 @@ $gradients = getRandomGradientClass(true);
             </div>
             <div class="grid grid-cols-1 gap-4 w-full md:w-2/3">
                 <!-- question 1 -->
-                <div class="question active transition-opacity duration-500 ease-in-out opacity-100 h-auto md:h-96" id="question1">
+                <div class="question active transition-opacity duration-500 ease-in-out opacity-100 h-full md:h-96" id="question1">
                     <div class="text-center flex flex-col items-center space-y-1 mb-12" data-aos="zoom-in" data-aos-duration="1000">
                         <h3 class="<?php echo $gradients; ?> ">First question</h3>
                         <h2 class="<?php echo $gradients; ?> ">Are you a person <span class="underline underline-offset-4 decoration-solid decoration-secondary font-extrabold text-lg ">with</span> or <span class="underline underline-offset-4 decoration-solid decoration-secondary font-extrabold text-lg">without</span> a penis</h2>
@@ -62,7 +48,7 @@ $gradients = getRandomGradientClass(true);
                     </div>
                 </div>
                 <!-- question 2 -->
-                <div class="question transition-opacity duration-500 ease-in-out opacity-0 hidden h-auto md:h-96 mb-10" id="question2">
+                <div class="question transition-opacity duration-500 ease-in-out opacity-0 hidden h-auto md:h-96 mb-10 h-full" id="question2">
                     <div class="text-center flex flex-col items-center space-y-1 mb-12" data-aos="zoom-in" data-aos-duration="1000">
                         <h3 class="<?php echo $gradients; ?>">Second question</h3>
                         <h2 class="<?php echo $gradients; ?>">How many people need to be involved in total?</h2>
@@ -92,12 +78,22 @@ $gradients = getRandomGradientClass(true);
                                 <div class="flex space-x-4">
                                     <div class="flex flex-col items-center space-y-1">
                                         <label for="womanMin">Min</label>
-                                        <input type="number" id="womanMin" min="0" max="99" value="1" class="w-16 text-center bg-transparent border border-secondaryDarker rounded" />
+                                        <input type="number"
+                                            id="womanMin"
+                                            min="0"
+                                            max="99"
+                                            value="1"
+                                            class="w-16 text-center bg-transparent border border-secondaryDarker rounded" />
                                         <span id="womanMinError" class="text-red-500 text-xs hidden"></span>
                                     </div>
                                     <div class="flex flex-col items-center space-y-1">
                                         <label for="womanMax">Max</label>
-                                        <input type="number" id="womanMax" min="0" max="99" value="1" class="w-16 text-center bg-transparent border border-secondaryDarker rounded" />
+                                        <input type="number"
+                                            id="womanMax"
+                                            min="0"
+                                            max="99"
+                                            value="1"
+                                            class="w-16 text-center bg-transparent border border-secondaryDarker rounded" />
                                         <span id="womanMaxError" class="text-red-500 text-xs hidden"></span>
                                     </div>
                                 </div>
@@ -107,21 +103,21 @@ $gradients = getRandomGradientClass(true);
                     </div>
                 </div>
                 <!-- 3 questions -->
-                <div class="question transition-opacity duration-500 ease-in-out opacity-0 hidden h-auto md:h-96 mb-10 " id="question3">
+                <div class="question transition-opacity duration-500 ease-in-out opacity-0 hidden h-full md:h-96 mb-10  " id="question3">
                     <div class="text-center flex flex-col items-center space-y-1 mb-12" data-aos="zoom-in" data-aos-duration="1000">
                         <h3 class="<?php echo $gradients; ?>">third question</h3>
                         <h2 class="<?php echo $gradients; ?>">Is there a performer that you want to include or exclude?</h2>
                     </div>
                     <div class="flex flex-col items-center space-y-4">
                         <input type="text" id="searchBar" placeholder="Search by name" class="text-TextWhite bg-transparent border-2 border-secondary focus:outline-none rounded">
-                        <div class="flex justify-between gap-4 w-48">
-                            <label class="flex justify-between items-center gap-2">
-                                <input type="checkbox" id="searchMan" class="text-secondary">
-                                <span>Man</span>
+                        <div class="flex justify-between gap-4 w-70">
+                            <label class="flex justify-between items-center gap-1 cursor-pointer">
+                                <input type="checkbox" id="searchMan">
+                                <span>With penis</span>
                             </label>
-                            <label class="flex justify-between items-center gap-2">
-                                <input type="checkbox" id="searchWoman" class="text-secondary">
-                                <span>Woman</span>
+                            <label class="flex justify-between items-center gap-1 cursor-pointer">
+                                <input type="checkbox" id="searchWoman">
+                                <span>Without a penis</span>
                             </label>
                         </div>
                         <div class="flex flex-wrap gap-2 w-full max-w-3xl justify-center align-center">
@@ -129,17 +125,9 @@ $gradients = getRandomGradientClass(true);
                             <div id="taggsIncluded" class="flex flex-wrap gap-2"></div>
                             <div id="taggsExcluded" class="flex flex-wrap gap-2"></div>
                         </div>
-                        <table class="table-auto border-collapse w-full text-TextWhite">
-                            <thead>
-                                <tr class="border-b border-secondary">
-                                    <th class="flex justify-center px-4 py-2 text-center border-r border-secondary w-full whitespace-nowrap">Image</th>
-                                    <th class="px-4 py-2 text-end w-1/2 whitespace-nowrap">Name</th>
-                                </tr>
-                            </thead>
-                            <tbody id="searchResults" class="divide-y divide-secondary">
-                                <!-- Search results will be inserted here -->
-                            </tbody>
-                        </table>
+                        <div id="searchResults" class="w-full max-w-3xl bg-darkPrimairy/50 rounded-lg text-center py-4 max-h-[65dvh] overflow-y-auto shadow-lg snap-y snap-proximity">
+                            <!-- Search results will be inserted here -->
+                        </div>
                     </div>
                 </div>
 
@@ -167,9 +155,9 @@ $gradients = getRandomGradientClass(true);
     require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/scripts.php';
     ?>
 
-    <!-- inport javascript E:\github repos\AI_Analyser_Website\app\assets\js\experiencePage\pagination.js -->
-    <script src="/assets/js/experiencePage/pagination.js"></script>
-    <script src="/assets/js/experiencePage/question2.js"></script>
-    <script src="/assets/js/experiencePage/question3.js"></script>
+    <script src="/assets/js/experiencePage/pagination.js?v=<?php echo time(); ?>"></script>
+    <script src="/assets/js/experiencePage/question2.js?v=<?php echo time(); ?>"></script>
+    <script src="/assets/js/experiencePage/question3.js?v=<?php echo time(); ?>"></script>
 </body>
+
 </html>

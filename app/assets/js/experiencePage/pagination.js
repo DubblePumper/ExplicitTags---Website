@@ -13,15 +13,19 @@ let isNavigating = false; // Lock flag for navigation
 function toggleBackground(radio) {
     const radios = document.querySelectorAll('input[name="gender"]');
     radios.forEach((r) => {
+        const parentDiv = r.parentElement.parentElement;
         if (r !== radio) {
-            r.parentElement.parentElement.classList.remove('border-secondary', 'bg-darkPrimairy');
-            r.parentElement.parentElement.classList.add('border-transparent');
+            parentDiv.classList.remove('border-secondary', 'bg-darkPrimairy');
+            parentDiv.classList.add('border-transparent');
+            parentDiv.style.borderColor = 'transparent';
         }
     });
 
     if (radio.checked) {
-        radio.parentElement.parentElement.classList.add('border-secondary', 'bg-darkPrimairy');
-        radio.parentElement.parentElement.classList.remove('border-transparent');
+        const parentDiv = radio.parentElement.parentElement;
+        parentDiv.classList.remove('border-transparent');
+        parentDiv.classList.add('border-secondary', 'bg-darkPrimairy');
+        parentDiv.style.borderColor = '#40a6ea'; // Secondary color hex code
     }
 }
 
@@ -44,6 +48,25 @@ function showQuestion(index) {
 
 function nextQuestion() {
     if (isNavigating || currentQuestion >= questions.length - 1) return;
+    
+    // Add validation for the first question
+    if (currentQuestion === 0) {
+        const genderSelected = document.querySelector('input[name="gender"]:checked');
+        if (!genderSelected) {
+            // Add shake animation to the gender options
+            const genderOptions = document.querySelectorAll('#man, #woman');
+            genderOptions.forEach(option => {
+                option.classList.add('shake');
+                option.style.border = '2px solid red';
+                setTimeout(() => {
+                    option.classList.remove('shake');
+                    option.style.border = '2px solid transparent';
+                }, 1000);
+            });
+            return;
+        }
+    }
+
     isNavigating = true;
 
     questions[currentQuestion].classList.remove('opacity-100');
@@ -85,5 +108,19 @@ function updateURL(index) {
     url.searchParams.set('question', index);
     window.history.pushState({}, '', url);
 }
+
+// Add CSS animation for shake effect
+const style = document.createElement('style');
+style.textContent = `
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-10px); }
+    75% { transform: translateX(10px); }
+}
+
+.shake {
+    animation: shake 0.5s ease-in-out;
+}`;
+document.head.appendChild(style);
 
 showQuestion(currentQuestion);
