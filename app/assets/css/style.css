@@ -102,3 +102,24 @@ input[type="checkbox"]:checked::before {
     border-radius: 4px;
 }
 
+.performers-grid .draggable {
+    cursor: grab !important;
+}
+
+.dragging {
+    cursor: grabbing !important;
+}
+
+.droppable-zone.drag-over {
+    background: rgba(64, 166, 234, 0.2);
+}
+
+.performer-card {
+    transition: all 0.3s ease;
+}
+
+.performer-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+

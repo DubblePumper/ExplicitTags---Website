@@ -102,7 +102,7 @@ $gradients = getRandomGradientClass(true);
                         </div>
                     </div>
                 </div>
-                <!-- 3 questions -->
+                <!-- question 3 -->
                 <div class="question transition-opacity duration-500 ease-in-out opacity-0 hidden h-full md:h-96 mb-10  " id="question3">
                     <div class="text-center flex flex-col items-center space-y-1 mb-12" data-aos="zoom-in" data-aos-duration="1000">
                         <h3 class="<?php echo $gradients; ?>">third question</h3>
@@ -131,19 +131,21 @@ $gradients = getRandomGradientClass(true);
                     </div>
                 </div>
 
-                <!-- Add more questions here -->
-                <div class="question transition-opacity duration-500 ease-in-out opacity-0 hidden h-auto md:h-96 mb-10 " id="question3">
+                <!-- question 4 -->
+                <div class="question transition-opacity duration-500 ease-in-out opacity-0 hidden h-auto md:h-96 mb-10 " id="question4">
                     <div class="text-center flex flex-col items-center space-y-1 mb-12" data-aos="zoom-in" data-aos-duration="1000">
-                        <h3 class="<?php echo $gradients; ?>">fourth question</h3>
-                        <h2 class="<?php echo $gradients; ?>">Is there a performer that you want to include or exclude?</h2>
+                        <h3 class="<?php echo $gradients; ?>">Fourth question</h3>
+                        <h2 class="<?php echo $gradients; ?>">Do you want to edit someone?</h2>
                     </div>
-                    <div class="flex flex-col items-center space-y-4">
-
-                    </div>
+                    <div class="flex flex-col items-center space-y-4" id="peopleSummary"></div>
                 </div>
+                 <!-- Add more questions here -->
             </div>
             <div class="flex flex-col self-center justify-self-center items-center justify-center space-y-4 aos-init aos-animate w-fit h-fit mb-6 md:mb-0 no-aos-mobile" data-aos="fade-left" data-aos-duration="1000">
-                <button type="button" class="rounded-full border-2 border-secondary p-3 sm:p-5 hover:bg-secondary hover:border-primairy hover:border-2 hover:text-gray-950 transition duration-500 ease-in-out" onclick="nextQuestion()">
+                <button type="button" 
+                        id="nextButton"
+                        class="rounded-full border-2 border-secondary p-3 sm:p-5 hover:bg-secondary hover:border-primairy hover:border-2 hover:text-gray-950 transition duration-500 ease-in-out" 
+                        onclick="nextQuestion()">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
                         <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
                     </svg>
@@ -155,9 +157,11 @@ $gradients = getRandomGradientClass(true);
     require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/scripts.php';
     ?>
 
+    <script src="/assets/js/utils/cache.js?v=<?php echo time(); ?>"></script>
     <script src="/assets/js/experiencePage/pagination.js?v=<?php echo time(); ?>"></script>
     <script src="/assets/js/experiencePage/question2.js?v=<?php echo time(); ?>"></script>
     <script src="/assets/js/experiencePage/question3.js?v=<?php echo time(); ?>"></script>
+    <script src="/assets/js/experiencePage/question4.js?v=<?php echo time(); ?>"></script>
 </body>
 
 </html>

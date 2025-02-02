@@ -29,6 +29,10 @@ function updateGridColumns(container, count) {
     }
 }
 
+function forceUpdateQuestion4() {
+    window.dispatchEvent(new Event('myCustomUpdate'));
+}
+
 // Initialize input elements
 document.addEventListener('DOMContentLoaded', () => {
     // Get all required elements
@@ -104,6 +108,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         updateManImages();
+        if(!hasError) {
+            localStorage.setItem('manMin', manMinInput.value);
+            localStorage.setItem('manMax', manMaxInput.value);
+            forceUpdateQuestion4(); // trigger re-render in question4
+        }
         return !hasError;
     }
 
@@ -150,6 +159,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         updateWomanImages();
+        if(!hasError) {
+            localStorage.setItem('womanMin', womanMinInput.value);
+            localStorage.setItem('womanMax', womanMaxInput.value);
+            forceUpdateQuestion4(); // trigger re-render in question4
+        }
         return !hasError;
     }
 
@@ -158,6 +172,49 @@ document.addEventListener('DOMContentLoaded', () => {
     manMaxInput.addEventListener('input', validateManInputs);
     womanMinInput.addEventListener('input', validateWomanInputs);
     womanMaxInput.addEventListener('input', validateWomanInputs);
+
+    // Add new cache update listeners
+    manMinInput.addEventListener('input', () => setCache('manMin', manMinInput.value));
+    manMaxInput.addEventListener('input', () => setCache('manMax', manMaxInput.value));
+    womanMinInput.addEventListener('input', () => setCache('womanMin', womanMinInput.value));
+    womanMaxInput.addEventListener('input', () => setCache('womanMax', womanMaxInput.value));
+
+    // Add these new lines
+    manMinInput.addEventListener('change', validateManInputs);
+    manMaxInput.addEventListener('change', validateManInputs);
+    womanMinInput.addEventListener('change', validateWomanInputs);
+    womanMaxInput.addEventListener('change', validateWomanInputs);
+
+    // Initialize values from cache
+    const initFromCache = () => {
+        manMinInput.value = getCache('manMin') || 1;
+        manMaxInput.value = getCache('manMax') || 1;
+        womanMinInput.value = getCache('womanMin') || 1;
+        womanMaxInput.value = getCache('womanMax') || 1;
+        
+        // Trigger validation and updates
+        validateManInputs();
+        validateWomanInputs();
+        updateManImages();
+        updateWomanImages();
+    }
+
+    // Update cache whenever inputs change
+    const updateCache = () => {
+        setCache('manMin', manMinInput.value);
+        setCache('manMax', manMaxInput.value);
+        setCache('womanMin', womanMinInput.value);
+        setCache('womanMax', womanMaxInput.value);
+    }
+
+    // Add cache updates to existing event listeners
+    manMinInput.addEventListener('input', updateCache);
+    manMaxInput.addEventListener('input', updateCache);
+    womanMinInput.addEventListener('input', updateCache);
+    womanMaxInput.addEventListener('input', updateCache);
+
+    // Initialize from cache
+    initFromCache();
 
     // Initial update
     updateManImages();

@@ -152,7 +152,14 @@ function updateSearchResults(data) {
     const defaultImage = 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'white\' stroke-width=\'2\'%3E%3Ccircle cx=\'12\' cy=\'8\' r=\'5\'/%3E%3Cpath d=\'M3 21v-2a7 7 0 0 1 14 0v2\'/%3E%3C/svg%3E';
     
     try {
-        const filteredData = data.filter(performer => !selectedPerformerIds.has(performer.performer_id));
+        // Use both current and cached selectedPerformerIds for filtering
+        const cachedSelected = new Set(getCache('selectedPerformerIds') || []);
+        const allSelectedIds = new Set([...selectedPerformerIds, ...cachedSelected]);
+        
+        const filteredData = data.filter(performer => {
+            const performerId = performer.performer_id || performer.id;
+            return !allSelectedIds.has(performerId);
+        });
         
         // Preload first 5 images
         const preloadImages = filteredData.slice(0, 5).map(performer => {
@@ -197,11 +204,11 @@ function updateSearchResults(data) {
                                     </div>
                                 </div>
                                 <div class="flex items-center space-x-2">
-                                    <button type="button" onclick="includePerformer('${performerId}','${performer.name}', this)"
+                                    <button type="button" onclick="includePerformer('${performerId}','${performer.name}','${gender}', this)"
                                         class="border-2 border-tertery hover:bg-tertery/50 text-white px-3 py-1 rounded-full text-sm transition-colors duration-300">
                                         Include
                                     </button>
-                                    <button type="button" onclick="excludePerformer('${performerId}','${performer.name}', this)"
+                                    <button type="button" onclick="excludePerformer('${performerId}','${performer.name}','${gender}', this)"
                                         class="border-2 border-secondaryTerteryMix hover:bg-secondaryTerteryMix/50  text-white px-3 py-1 rounded-full text-sm transition-colors duration-300">
                                         Exclude
                                     </button>
@@ -245,10 +252,12 @@ function initializeLazyLoading() {
 function createTag(performerId, performerName, type) {
     const container = (type === 'Included') ? document.getElementById('taggsIncluded') : document.getElementById('taggsExcluded');
     const tagColor = type === 'Included' ? 'border-tertery' : 'border-secondaryTerteryMix';
+    const cachedData = getCache('performerName_' + performerId);
+    const [name, gender] = cachedData || [performerName, ''];
     
     container.insertAdjacentHTML('beforeend', `
         <div class="flex items-center space-x-2 px-3 py-1 bg-darkPrimairy/50 border-2 ${tagColor} rounded-full text-sm transition-all duration-300">
-            <span>${performerName} (${type})</span>
+            <span>${name} (${type})</span>
             <button type="button" 
                     onclick="removeSelectedPerformer('${performerId}', this.parentElement, '${type}')"
                     class="ml-1 hover:text-TextWhite text-secondary transition-colors duration-300 flex items-center justify-center w-4 h-4">
@@ -267,18 +276,44 @@ function removePerformer(performerId, tagElement) {
     startSSE();
 }
 
-function includePerformer(performerId, performerName, rowElement) {
+function includePerformer(performerId, performerName, performerGender, rowElement) {
+    // Add to sets
     includedPerformerIds.add(performerId);
     selectedPerformerIds.add(performerId);
+    
+    // Create visual tag
     createTag(performerId, performerName, 'Included');
-    rowElement.closest('li').remove();
+    
+    // Remove from search results
+    if (rowElement && rowElement.closest('li')) {
+        rowElement.closest('li').remove();
+    }
+    
+    // Update cache
+    setCache('performerName_' + performerId, [performerName, performerGender]);
+    setCache('includedPerformerIds', Array.from(includedPerformerIds));
+    setCache('selectedPerformerIds', Array.from(selectedPerformerIds));
+    forceUpdateQuestion4(); // trigger re-render in question4
 }
 
-function excludePerformer(performerId, performerName, rowElement) {
+function excludePerformer(performerId, performerName, performerGender, rowElement) {
+    // Add to sets
     excludedPerformerIds.add(performerId);
     selectedPerformerIds.add(performerId);
+    
+    // Create visual tag
     createTag(performerId, performerName, 'Excluded');
-    rowElement.closest('li').remove();
+    
+    // Remove from search results
+    if (rowElement && rowElement.closest('li')) {
+        rowElement.closest('li').remove();
+    }
+    
+    // Update cache
+    setCache('performerName_' + performerId, [performerName, performerGender]);
+    setCache('excludedPerformerIds', Array.from(excludedPerformerIds));
+    setCache('selectedPerformerIds', Array.from(selectedPerformerIds));
+    forceUpdateQuestion4(); // trigger re-render in question4
 }
 
 function removeSelectedPerformer(performerId, tagElement, type) {
@@ -288,7 +323,15 @@ function removeSelectedPerformer(performerId, tagElement, type) {
         excludedPerformerIds.delete(performerId);
     }
     selectedPerformerIds.delete(performerId);
+    removeCache('performerName_' + performerId);
     tagElement.remove();
+    
+    // Update cache
+    setCache('includedPerformerIds', Array.from(includedPerformerIds));
+    setCache('excludedPerformerIds', Array.from(excludedPerformerIds));
+    setCache('selectedPerformerIds', Array.from(selectedPerformerIds));
+    forceUpdateQuestion4(); // trigger re-render in question4
+    
     startSSE();
 }
 
@@ -348,3 +391,39 @@ function debounceSearch() {
 }
 
 window.addEventListener('DOMContentLoaded', startSSE);
+
+// Add this new function at the end
+function updatePerformerCache() {
+    setCache('includedPerformerIds', Array.from(includedPerformerIds));
+    setCache('excludedPerformerIds', Array.from(excludedPerformerIds));
+    setCache('selectedPerformerIds', Array.from(selectedPerformerIds));
+}
+
+// Initialize sets from cache
+document.addEventListener('DOMContentLoaded', () => {
+    const cachedIncluded = getCache('includedPerformerIds') || [];
+    const cachedExcluded = getCache('excludedPerformerIds') || [];
+    const cachedSelected = getCache('selectedPerformerIds') || [];
+
+    includedPerformerIds = new Set(cachedIncluded);
+    excludedPerformerIds = new Set(cachedExcluded);
+    selectedPerformerIds = new Set(cachedSelected);
+
+    // Recreate tags for cached performers
+    cachedIncluded.forEach(id => {
+        const name = getCache(`performerName_${id}`);
+        if (name) createTag(id, name, 'Included');
+    });
+    
+    cachedExcluded.forEach(id => {
+        const name = getCache(`performerName_${id}`);
+        if (name) createTag(id, name, 'Excluded');
+    });
+
+    // Initial search with cached filters
+    startSSE();
+});
+
+function forceUpdateQuestion4() {
+    window.dispatchEvent(new Event('myCustomUpdate'));
+}

@@ -26,6 +26,20 @@ function toggleBackground(radio) {
         parentDiv.classList.remove('border-transparent');
         parentDiv.classList.add('border-secondary', 'bg-darkPrimairy');
         parentDiv.style.borderColor = '#40a6ea'; // Secondary color hex code
+        // Cache the selected gender
+        setCache('selectedGender', radio.value);
+    }
+}
+
+// Add this new function
+function initializeFromCache() {
+    const savedGender = getCache('selectedGender');
+    if (savedGender) {
+        const radio = document.querySelector(`input[name="gender"][value="${savedGender}"]`);
+        if (radio) {
+            radio.checked = true;
+            toggleBackground(radio);
+        }
     }
 }
 
@@ -42,8 +56,19 @@ function showQuestion(index) {
             question.classList.remove('opacity-100');
         }
     });
+    
+    if (index === 2) {
+        // Trigger validation to save current values to localStorage
+        document.getElementById('manMin').dispatchEvent(new Event('change'));
+        document.getElementById('manMax').dispatchEvent(new Event('change'));
+        document.getElementById('womanMin').dispatchEvent(new Event('change'));
+        document.getElementById('womanMax').dispatchEvent(new Event('change'));
+    }
     checkButtons();
     updateURL(index);
+
+    // Cache current question
+    setCache('currentQuestion', index);
 }
 
 function nextQuestion() {
@@ -77,6 +102,9 @@ function nextQuestion() {
         localStorage.setItem('currentQuestion', currentQuestion);
         showQuestion(currentQuestion);
         isNavigating = false;
+
+        // Cache current question
+        setCache('currentQuestion', currentQuestion);
     }, 500);
 }
 
@@ -96,10 +124,22 @@ function prevQuestion() {
 }
 
 function checkButtons() {
+    const prevButton = document.getElementById('prevButton');
+    const nextButton = document.getElementById('nextButton');
+    const totalQuestions = document.querySelectorAll('.question').length;
+    
+    // Hide prev button on first question
     if (currentQuestion === 0) {
-        document.getElementById('prevButton').classList.add('hidden');
+        prevButton.classList.add('hidden');
     } else {
-        document.getElementById('prevButton').classList.remove('hidden');
+        prevButton.classList.remove('hidden');
+    }
+    
+    // Hide next button on last question
+    if (currentQuestion === totalQuestions - 1) {
+        nextButton.classList.add('hidden');
+    } else {
+        nextButton.classList.remove('hidden');
     }
 }
 
@@ -122,5 +162,7 @@ style.textContent = `
     animation: shake 0.5s ease-in-out;
 }`;
 document.head.appendChild(style);
+
+document.addEventListener('DOMContentLoaded', initializeFromCache);
 
 showQuestion(currentQuestion);

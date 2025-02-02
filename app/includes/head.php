@@ -33,6 +33,9 @@
     <!-- AOS Animation CDN -->
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
 
+    <!-- interactjs for drag and drop -->
+    <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
+
 
     <!-- tailwindCSS -->
     <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
