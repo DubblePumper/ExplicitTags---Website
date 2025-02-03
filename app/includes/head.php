@@ -86,10 +86,8 @@
     <script type="importmap">
     {
         "imports": {
-            "three": "https://unpkg.com/three@0.173.0/build/three.module.js",
-            "three/addons/": "https://unpkg.com/three@0.173.0//examples/jsm/",
-            "GLTFLoader": "https://unpkg.com/three@0.173.0//examples/jsm/loaders/GLTFLoader.js",
-            "DRACOLoader": "https://unpkg.com/three@0.173.0//examples/jsm/loaders/DRACOLoader.js"
+            "three": "https://unpkg.com/three@0.173.0/build/three.module",
+            "three/": "https://unpkg.com/three@0.173.0/"
         }
     }
     </script>

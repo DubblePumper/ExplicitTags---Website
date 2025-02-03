@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'GLTFLoader';
-import { DRACOLoader } from 'DRACOLoader';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader';
 
 document.addEventListener("DOMContentLoaded", () => {
   const peopleSummary = document.getElementById("peopleSummary");
@@ -344,16 +344,18 @@ document.addEventListener("DOMContentLoaded", () => {
   function initThreeJsScene(containerId, modelPath) {
     const container = document.getElementById(containerId);
     const width = container.clientWidth;
-    const height = 200;
+    const height = container.clientHeight;
 
-    // Setup scene
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0d0d0d); // Match darkPrimairy color
+    scene.background = new THREE.Color(0x0d0d0d);
 
-    // Setup camera with better positioning
-    const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-    camera.position.set(0, 1, 3);
-    camera.lookAt(0, 0, 0);
+    // More precise model type check
+    const isMaleModel = modelPath.endsWith('/male.glb') && !modelPath.endsWith('/female.glb');
+
+    // Same camera setup for both models
+    const camera = new THREE.PerspectiveCamera(25, width / height, 0.1, 1000);
+    camera.position.set(0, 1.2, 5);
+    camera.lookAt(0, 1.2, 0);
 
     // Setup renderer
     const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -393,27 +395,23 @@ document.addEventListener("DOMContentLoaded", () => {
                 
                 const model = gltf.scene;
                 
-                // Center and scale model
-                const box = new THREE.Box3().setFromObject(model);
-                const center = box.getCenter(new THREE.Vector3());
-                const size = box.getSize(new THREE.Vector3());
-                
-                const maxDim = Math.max(size.x, size.y, size.z);
-                const scale = 1.5 / maxDim;
-                model.scale.setScalar(scale);
-                
-                model.position.sub(center.multiplyScalar(scale));
-                model.position.y -= 0.5; // Adjust vertical position
-                
-                scene.add(model);
-
-                // Animation loop
-                function animate() {
-                    requestAnimationFrame(animate);
-                    model.rotation.y += 0.01;
-                    renderer.render(scene, camera);
+                if (isMaleModel) {
+                    model.scale.setScalar(1.5);
+                    model.position.set(0, 0.25, 0);
+                } else {
+                    model.scale.setScalar(1.0);
+                    model.position.set(0, 0, 0); // Reset position first
+                    // Center the model using bounding box
+                    const box = new THREE.Box3().setFromObject(model);
+                    const center = box.getCenter(new THREE.Vector3());
+                    model.position.sub(center);
+                    // Adjust final position
+                    model.position.y += 1.2;
                 }
-                animate();
+                
+                model.rotation.y = -Math.PI / 12;
+                scene.add(model);
+                renderer.render(scene, camera);
             },
             (xhr) => {
                 const percent = (xhr.loaded / xhr.total * 100);
@@ -439,25 +437,30 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function openAssignmentModal(type, position) {
-    // Update model paths to match your actual file structure
     const modelPath = type === 'withPenis' 
         ? '/assets/3dmodels/male.glb' 
         : '/assets/3dmodels/female.glb';
     
     const modalHtml = `
-        <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" id="assignmentModal">
-            <div class="bg-darkPrimairy p-6 rounded-lg max-w-md w-full max-h-[80vh] overflow-y-auto">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-semibold">Edit your own performer</h3>
+        <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" id="assignmentModal">
+            <div class="bg-darkPrimairy p-6 rounded-lg w-full max-w-6xl h-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-semibold">Edit your own performer</h3>
                     <button class="text-gray-400 hover:text-white close-modal">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
                 </div>
-                <div id="modelViewer" class="w-full h-[200px] mb-4"></div>
-                <div id="modalContent" class="space-y-4">
-                    <!-- Content will be dynamically populated -->
+                <div class="flex gap-6">
+                    <div class="flex items-center justify-center">
+                        <div id="modelViewer" class="w-[400px] h-[500px] bg-darkPrimairy/50 rounded-lg"></div>
+                    </div>
+                    <div class="flex-1">
+                        <div id="modalContent" class="grid grid-cols-2 gap-4 max-h-[500px] overflow-y-auto pr-2">
+                            <!-- Content will be dynamically populated -->
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -486,17 +489,6 @@ document.addEventListener("DOMContentLoaded", () => {
     );
 
     const modalContent = document.getElementById('modalContent');
-    modalContent.innerHTML = validPerformers.length ? validPerformers.map(p => `
-        <div class="performer-option bg-darkPrimairy/30 p-3 rounded-lg cursor-pointer hover:bg-darkPrimairy/50 transition-all duration-300"
-             data-performer-id="${p.id}"
-             data-performer-name="${p.name}"
-             data-performer-gender="${p.gender}">
-            <div class="flex items-center gap-3">
-                <span class="font-medium">${p.name}</span>
-                <span class="text-sm text-secondary">${p.gender}</span>
-            </div>
-        </div>
-    `).join('') : '<p class="text-center text-gray-400">No compatible performers available</p>';
 
     // Add click handler for performer selection
     modalContent.addEventListener('click', (e) => {
