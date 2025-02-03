@@ -1,3 +1,7 @@
+import * as THREE from 'three';
+import { GLTFLoader } from 'GLTFLoader';
+import { DRACOLoader } from 'DRACOLoader';
+
 document.addEventListener("DOMContentLoaded", () => {
   const peopleSummary = document.getElementById("peopleSummary");
   let dragDropInitialized = false;
@@ -53,6 +57,7 @@ document.addEventListener("DOMContentLoaded", () => {
           // Check if position has assigned performer
           const assigned = getCache(`assignment_${type}_${index}`);
           const assignedClass = assigned ? "opacity-20" : "";
+          const dropzoneClass = assigned ? '' : 'cursor-pointer open-modal';
           const assignedContent = assigned
             ? `
                     <div class="text-center relative w-full h-full flex flex-col items-center justify-center">
@@ -68,7 +73,7 @@ document.addEventListener("DOMContentLoaded", () => {
             : "";
 
           return `
-                    <div class="dropzone bg-darkPrimairy/30 p-4 rounded-lg transition-all duration-300 hover:bg-darkPrimairy/50 select-none h-[180px] flex items-center justify-center">
+                    <div class="dropzone bg-darkPrimairy/30 p-4 rounded-lg transition-all duration-300 hover:bg-darkPrimairy/50 select-none h-[180px] flex items-center justify-center ${dropzoneClass}">
                         <div class="relative w-32 h-32 border-2 border-dashed border-secondary/50 rounded-lg flex items-center justify-center overflow-hidden">
                             <div class="absolute inset-0 bg-darkPrimairy/20 z-0"></div>
                             <img src="/assets/images/website_Images/${imgSrc}" 
@@ -319,6 +324,194 @@ document.addEventListener("DOMContentLoaded", () => {
         // Remove the draggable element
         draggable.remove();
       }
+    });
+
+    // Add click handler for unassigned dropzones
+    document.addEventListener('click', (e) => {
+      const dropzone = e.target.closest('.dropzone.open-modal');
+      if (!dropzone) return;
+
+      const type = dropzone.querySelector('img').dataset.type;
+      const position = dropzone.querySelector('img').dataset.position;
+      
+      // Don't open modal if dropzone is assigned
+      if (getCache(`assignment_${type}_${position}`)) return;
+
+      openAssignmentModal(type, position);
+    });
+  }
+
+  function initThreeJsScene(containerId, modelPath) {
+    const container = document.getElementById(containerId);
+    const width = container.clientWidth;
+    const height = 200;
+
+    // Setup scene
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0d0d0d); // Match darkPrimairy color
+
+    // Setup camera with better positioning
+    const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+    camera.position.set(0, 1, 3);
+    camera.lookAt(0, 0, 0);
+
+    // Setup renderer
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(width, height);
+    // Fix for deprecated outputEncoding
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    container.appendChild(renderer.domElement);
+
+    // Improved lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1);
+    scene.add(ambientLight);
+
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(2, 2, 2);
+    scene.add(directionalLight);
+
+    // Initialize DRACO loader
+    const dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/'); // Use CDN path
+    dracoLoader.preload();
+
+    // Create and configure GLTFLoader
+    const loader = new GLTFLoader();
+    loader.setDRACOLoader(dracoLoader);
+    
+    // Add loading indicator
+    container.innerHTML = '<p class="text-center text-secondary">Loading 3D model...</p>';
+
+    // Load model with error handling
+    try {
+        loader.load(
+            modelPath,
+            (gltf) => {
+                container.innerHTML = ''; // Clear loading message
+                container.appendChild(renderer.domElement);
+                
+                const model = gltf.scene;
+                
+                // Center and scale model
+                const box = new THREE.Box3().setFromObject(model);
+                const center = box.getCenter(new THREE.Vector3());
+                const size = box.getSize(new THREE.Vector3());
+                
+                const maxDim = Math.max(size.x, size.y, size.z);
+                const scale = 1.5 / maxDim;
+                model.scale.setScalar(scale);
+                
+                model.position.sub(center.multiplyScalar(scale));
+                model.position.y -= 0.5; // Adjust vertical position
+                
+                scene.add(model);
+
+                // Animation loop
+                function animate() {
+                    requestAnimationFrame(animate);
+                    model.rotation.y += 0.01;
+                    renderer.render(scene, camera);
+                }
+                animate();
+            },
+            (xhr) => {
+                const percent = (xhr.loaded / xhr.total * 100);
+                container.innerHTML = `<p class="text-center text-secondary">Loading: ${Math.round(percent)}%</p>`;
+            },
+            (error) => {
+                console.error('Error loading model:', error);
+                container.innerHTML = '<p class="text-red-500 text-center">Error loading 3D model</p>';
+            }
+        );
+    } catch (error) {
+        console.error('Error initializing loader:', error);
+        container.innerHTML = '<p class="text-red-500 text-center">Error initializing 3D viewer</p>';
+    }
+
+    // Handle window resize
+    window.addEventListener('resize', () => {
+        const newWidth = container.clientWidth;
+        camera.aspect = newWidth / height;
+        camera.updateProjectionMatrix();
+        renderer.setSize(newWidth, height);
+    });
+  }
+
+  function openAssignmentModal(type, position) {
+    // Update model paths to match your actual file structure
+    const modelPath = type === 'withPenis' 
+        ? '/assets/3dmodels/male.glb' 
+        : '/assets/3dmodels/female.glb';
+    
+    const modalHtml = `
+        <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" id="assignmentModal">
+            <div class="bg-darkPrimairy p-6 rounded-lg max-w-md w-full max-h-[80vh] overflow-y-auto">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold">Edit your own performer</h3>
+                    <button class="text-gray-400 hover:text-white close-modal">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <div id="modelViewer" class="w-full h-[200px] mb-4"></div>
+                <div id="modalContent" class="space-y-4">
+                    <!-- Content will be dynamically populated -->
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Add modal to DOM
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    // Initialize 3D scene after modal is added to DOM
+    requestAnimationFrame(() => {
+        initThreeJsScene('modelViewer', modelPath);
+    });
+
+    // Rest of the existing modal code...
+    const modal = document.getElementById('assignmentModal');
+    modal.addEventListener('click', (e) => {
+        if (e.target.closest('.close-modal') || e.target === modal) {
+            modal.remove();
+        }
+    });
+
+    // Populate modal content with available performers
+    const { includedPerformers } = loadSummaryData();
+    const validPerformers = includedPerformers.filter(p => 
+        checkValidDrop(type, p.gender)
+    );
+
+    const modalContent = document.getElementById('modalContent');
+    modalContent.innerHTML = validPerformers.length ? validPerformers.map(p => `
+        <div class="performer-option bg-darkPrimairy/30 p-3 rounded-lg cursor-pointer hover:bg-darkPrimairy/50 transition-all duration-300"
+             data-performer-id="${p.id}"
+             data-performer-name="${p.name}"
+             data-performer-gender="${p.gender}">
+            <div class="flex items-center gap-3">
+                <span class="font-medium">${p.name}</span>
+                <span class="text-sm text-secondary">${p.gender}</span>
+            </div>
+        </div>
+    `).join('') : '<p class="text-center text-gray-400">No compatible performers available</p>';
+
+    // Add click handler for performer selection
+    modalContent.addEventListener('click', (e) => {
+        const performerOption = e.target.closest('.performer-option');
+        if (!performerOption) return;
+
+        const performerData = {
+            performerId: performerOption.dataset.performerId,
+            name: performerOption.dataset.performerName,
+            gender: performerOption.dataset.performerGender
+        };
+
+        setCache(`assignment_${type}_${position}`, performerData);
+        modal.remove();
+        renderSummary();
     });
   }
 

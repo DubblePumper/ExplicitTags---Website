@@ -161,7 +161,7 @@ $gradients = getRandomGradientClass(true);
     <script src="/assets/js/experiencePage/pagination.js?v=<?php echo time(); ?>"></script>
     <script src="/assets/js/experiencePage/question2.js?v=<?php echo time(); ?>"></script>
     <script src="/assets/js/experiencePage/question3.js?v=<?php echo time(); ?>"></script>
-    <script src="/assets/js/experiencePage/question4.js?v=<?php echo time(); ?>"></script>
+    <script type="module" src="/assets/js/experiencePage/question4.js?v=<?php echo time(); ?>"></script>
 </body>
 
 </html>

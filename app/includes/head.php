@@ -78,8 +78,40 @@
         integrity="sha256-kmHvs0B+OpCW5GVHUNjv9rOmY0IvSIRcf7zGUDTDQM8="
         crossorigin="anonymous"></script>
     <!-- Stylesheets and fonts -->
-    <link rel="stylesheet" type="text/css" href="/assets/css/style.css?v=<?php echo time();?>">
+    <link rel="stylesheet" type="text/css" href="/assets/css/style.css?v=<?php echo time(); ?>">
     <link href="https://fonts.googleapis.com/css?family=Helvetica|Roboto" rel="stylesheet">
+
+    <!-- threeJS -->
+    <script async src="https://unpkg.com/es-module-shims/dist/es-module-shims.js"></script>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.173.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.173.0//examples/jsm/",
+            "GLTFLoader": "https://unpkg.com/three@0.173.0//examples/jsm/loaders/GLTFLoader.js",
+            "DRACOLoader": "https://unpkg.com/three@0.173.0//examples/jsm/loaders/DRACOLoader.js"
+        }
+    }
+    </script>
+
+    <script>
+        // Wait for THREE.js and GLTFLoader to load
+        function initThreeJs() {
+            if (window.THREE && window.THREE.GLTFLoader) {
+                return;
+            }
+            
+            const checkInterval = setInterval(() => {
+                if (typeof THREE !== 'undefined') {
+                    window.THREE = THREE;
+                    if (typeof THREE.GLTFLoader !== 'undefined') {
+                        clearInterval(checkInterval);
+                    }
+                }
+            }, 100);
+        }
+        initThreeJs();
+    </script>
 
     <!-- Favicon links -->
     <link rel="icon" href="/assets/images/icons/ExplicitTags-logo-SVG-NoQuote.svg" type="image/svg+xml">
