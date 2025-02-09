@@ -1,3 +1,5 @@
+import { openPerformerModal } from '../modals/performerModal.js';
+
 const searchBar = document.getElementById('searchBar');
 const searchMan = document.getElementById('searchMan');
 const searchWoman = document.getElementById('searchWoman');
@@ -14,6 +16,9 @@ let excludedPerformerIds = new Set();
 // Increase debounce delay and add loading state
 const DEBOUNCE_DELAY = 800; // Increased from 500 to 800ms
 const MIN_SEARCH_LENGTH = 2;
+
+// Add performerDetails cache
+const performerDetailsCache = new Map();
 
 function startSSE() {
     if (eventSource) {
@@ -171,6 +176,21 @@ function updateSearchResults(data) {
             return null;
         });
 
+        // Pre-fetch performer details and store in cache
+        if (window.location.hostname.includes("localhost")) {
+            fetch('/performers_details_data.json')
+                .then(response => response.json())
+                .then(details => {
+                    filteredData.forEach(performer => {
+                        const id = performer.performer_id || performer.id;
+                        const detail = details.find(d => d.id === id);
+                        if (detail) {
+                            performerDetailsCache.set(id, detail);
+                        }
+                    });
+                });
+        }
+
         searchResults.classList.remove('py-4', 'bg-darkPrimairy/50');
 
         searchResults.innerHTML = `
@@ -183,8 +203,11 @@ function updateSearchResults(data) {
                     return `
                         <li class="performer-row relative transition-colors bg-darkPrimairy/50 duration-300 hover:bg-secondary/20 text-start snap-center"
                             data-performer-id="${performerId || ''}"
-                            data-performer-name="${performer.name || ''}">
-                            <div class="flex items-center justify-between p-4">
+                            data-performer-name="${performer.name || ''}"
+                            data-performer-gender="${performer.gender}"
+                            data-performer-info="${performer.extraInfo || ''}"
+                            data-performer-image="${imageUrl}">
+                            <div class="flex items-center justify-between p-4 cursor-pointer">
                                 <div class="flex items-center space-x-4">
                                     <div class="w-16 h-16 rounded-[50%] overflow-hidden group/image flex-shrink-0">
                                         <img src="${index < 5 ? imageUrl : defaultImage}" 
@@ -221,6 +244,22 @@ function updateSearchResults(data) {
         `;
 
         initializeLazyLoading();
+
+        // NEW: Attach click event on performer rows for modal display
+        document.querySelectorAll('.performer-row').forEach(row => {
+            row.addEventListener('click', (e) => {
+                // Avoid triggering if an include/exclude button is clicked
+                if(e.target.closest('button')) return;
+                const performer = {
+                    id: row.dataset.performerId,
+                    name: row.dataset.performerName,
+                    gender: row.dataset.performerGender,
+                    extraInfo: row.dataset.performerInfo,
+                    image_url: row.dataset.performerImage
+                };
+                openPerformerModal(performer);
+            });
+        });
 
     } catch (error) {
         console.error('Error rendering results:', error);
@@ -427,3 +466,6 @@ document.addEventListener('DOMContentLoaded', () => {
 function forceUpdateQuestion4() {
     window.dispatchEvent(new Event('myCustomUpdate'));
 }
+
+// Export the cache for use in performerModal.js
+export { performerDetailsCache };

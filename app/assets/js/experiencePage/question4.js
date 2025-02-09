@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
 document.addEventListener("DOMContentLoaded", () => {
   const peopleSummary = document.getElementById("peopleSummary");
@@ -365,6 +366,13 @@ document.addEventListener("DOMContentLoaded", () => {
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     container.appendChild(renderer.domElement);
 
+    // Initialize OrbitControls for user spinning with fixed x and y
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enablePan = false;  // Disallow panning so x and y stay unchanged
+    controls.enableZoom = true;  // Allow zoom if needed
+    controls.minPolarAngle = Math.PI / 2;
+    controls.maxPolarAngle = Math.PI / 2;
+
     // Improved lighting
     const ambientLight = new THREE.AmbientLight(0xffffff, 1);
     scene.add(ambientLight);
@@ -394,10 +402,23 @@ document.addEventListener("DOMContentLoaded", () => {
                 container.appendChild(renderer.domElement);
                 
                 const model = gltf.scene;
-                
                 if (isMaleModel) {
                     model.scale.setScalar(1.5);
-                    model.position.set(0, 0.25, 0);
+                    // Center the male model using its bounding box
+                    const box = new THREE.Box3().setFromObject(model);
+                    const center = box.getCenter(new THREE.Vector3());
+                    model.position.sub(center);
+                    // Optionally adjust vertical offset as needed
+                    model.position.y += 0.1;
+                    
+                    // Adjust skin tone for male model to be more like the female model
+                    model.traverse((child) => {
+                        if (child.isMesh && child.material) {
+                            // Blend current color with a lighter skin tint (e.g. 0xffe0bd)
+                            child.material.color.lerp(new THREE.Color(0x8d5524), 0.5);
+                            child.material.needsUpdate = true;
+                        }
+                    });
                 } else {
                     model.scale.setScalar(1.0);
                     model.position.set(0, 0, 0); // Reset position first
@@ -406,12 +427,43 @@ document.addEventListener("DOMContentLoaded", () => {
                     const center = box.getCenter(new THREE.Vector3());
                     model.position.sub(center);
                     // Adjust final position
-                    model.position.y += 1.2;
+                    model.position.y += 0.1;
                 }
                 
                 model.rotation.y = -Math.PI / 12;
                 scene.add(model);
-                renderer.render(scene, camera);
+
+                // Update lighting for male model to brighten all areas
+                if (isMaleModel) {
+                    // Replace existing lights with stronger ones:
+                    const backLight = new THREE.DirectionalLight(0xffffff, 1.0);
+                    backLight.position.set(0, 0, -5);
+                    scene.add(backLight);
+                    
+                    const fillLight = new THREE.DirectionalLight(0xffffff, 1.0);
+                    fillLight.position.set(5, 5, 5);
+                    scene.add(fillLight);
+                    
+                    // Add an overhead hemisphere light to further light the model
+                    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.75);
+                    hemiLight.position.set(0, 20, 0);
+                    scene.add(hemiLight);
+                    
+                    // ADDITIONAL CHANGE: Add a left side light to brighten the dark left area.
+                    const leftLight = new THREE.DirectionalLight(0xffffff, 0.8);
+                    leftLight.position.set(-5, 2, 0);
+                    // Optionally disable shadows for performance
+                    leftLight.castShadow = false;
+                    scene.add(leftLight);
+                }
+                
+                // Start animation loop after model is loaded
+                function animate() {
+                    requestAnimationFrame(animate);
+                    controls.update();
+                    renderer.render(scene, camera);
+                }
+                animate();
             },
             (xhr) => {
                 const percent = (xhr.loaded / xhr.total * 100);
@@ -444,7 +496,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const modalHtml = `
         <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" id="assignmentModal">
             <div class="bg-darkPrimairy p-6 rounded-lg w-full max-w-6xl h-auto">
-                <div class="flex justify-between items-center mb-6">
+                <div class="flex justify-between items-center mb-6 border-b border-secondary pb-2">
                     <h3 class="text-xl font-semibold">Edit your own performer</h3>
                     <button class="text-gray-400 hover:text-white close-modal">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
