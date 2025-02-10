@@ -6,14 +6,14 @@ const searchResults = document.getElementById('searchResults');
 // Add SSE URL configuration
 const sseUrl = window.location.origin + '/api/performers_sse.php';
 
+// Declare all state variables
 let eventSource;
-let debounceTimer; // Add this line
 let selectedPerformerIds = new Set();
 let includedPerformerIds = new Set();
 let excludedPerformerIds = new Set();
 
-// Increase debounce delay and add loading state
-const DEBOUNCE_DELAY = 800; // Increased from 500 to 800ms
+// Constants
+const DEBOUNCE_DELAY = 800;
 const MIN_SEARCH_LENGTH = 2;
 
 // Add performerDetails cache
@@ -465,3 +465,8 @@ document.addEventListener('DOMContentLoaded', () => {
 function forceUpdateQuestion4() {
     window.dispatchEvent(new Event('myCustomUpdate'));
 }
+
+// Make functions globally accessible
+window.includePerformer = includePerformer;
+window.excludePerformer = excludePerformer;
+window.removeSelectedPerformer = removeSelectedPerformer;

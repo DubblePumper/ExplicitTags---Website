@@ -108,15 +108,6 @@ window.openPerformerModal = function(performer) {
 
   // Add bio toggle handler
   modal.addEventListener("click", (e) => {
-    if (e.target.classList.contains("bio-toggle")) {
-      const container = e.target.closest(".bio-container");
-      const shortBio = container.querySelector(".bio-short");
-      const fullBio = container.querySelector(".bio-full");
-
-      shortBio.classList.toggle("hidden");
-      fullBio.classList.toggle("hidden");
-      e.target.textContent = shortBio.classList.contains("hidden") ? "Show less" : "Show more";
-    }
 
     const isCloseButton = e.target.closest("#closeModal") || e.target.id === "performerModal";
     if (isCloseButton) {
