@@ -153,15 +153,20 @@ $gradients = getRandomGradientClass(true);
             </div>
         </form>
     </main>
-    <?php
-    require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/scripts.php';
-    ?>
+    <?php require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/scripts.php'; ?>
 
+    <!-- Add global variables -->
+    <script>
+        window.APP_VERSION = '<?php echo time(); ?>';
+        window.performerDetailsCache = new Map();
+    </script>
+
+    <!-- Load scripts in correct order -->
     <script src="/assets/js/utils/cache.js?v=<?php echo time(); ?>"></script>
     <script src="/assets/js/experiencePage/pagination.js?v=<?php echo time(); ?>"></script>
-    <script src="/assets/js/experiencePage/question2.js?v=<?php echo time(); ?>"></script>
+    <script type="module" src="/assets/js/modals/performerModal.js?v=<?php echo time(); ?>"></script>
+    <script type="module" src="/assets/js/experiencePage/question2.js?v=<?php echo time(); ?>"></script>
     <script type="module" src="/assets/js/experiencePage/question3.js?v=<?php echo time(); ?>"></script>
     <script type="module" src="/assets/js/experiencePage/question4.js?v=<?php echo time(); ?>"></script>
 </body>
-
 </html>

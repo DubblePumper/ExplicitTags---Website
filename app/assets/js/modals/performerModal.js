@@ -1,43 +1,76 @@
-import { performerDetailsCache } from "../experiencePage/question3.js";
-
 // Add new helper function for image slider
-function initializeImageSlider(imageContainer, images) {
-    let currentIndex = 0;
-    const validImages = images.filter(img => img && img !== "");
-
-    if (!validImages.length) return;
-
-    // Set first image
-    const imgElement = imageContainer.querySelector('img');
-    imgElement.src = validImages[0];
+function initializeImageSlider(imageContainer, performer) {
+    // Get image URLs from performer data
+    const imageUrls = performer.image_urls || [];
     
-    // Auto rotate images
-    const slideInterval = setInterval(() => {
-        currentIndex = (currentIndex + 1) % validImages.length;
-        imgElement.style.opacity = '0';
-        
-        setTimeout(() => {
-            imgElement.src = validImages[currentIndex];
-            imgElement.style.opacity = '1';
-        }, 300); // Match transition duration
-    }, 3000); // Change image every 3 seconds
-
-    // Cleanup on modal close
-    const modal = document.getElementById('performerModal');
-    const originalCleanup = modal.onremove;
-    modal.onremove = () => {
-        clearInterval(slideInterval);
-        if (originalCleanup) originalCleanup();
-    };
+    if (window.location.hostname.includes('localhost')) {
+        // Use placeholder for localhost
+        startImageSlider(imageContainer, ['/assets/images/placeholders/performer-placeholder.svg']);
+    } else if (imageUrls.length > 0) {
+        // Start slider with actual images
+        startImageSlider(imageContainer, imageUrls);
+    }
 }
 
-export function openPerformerModal(performer) {
+function startImageSlider(container, images) {
+    if (!images || images.length === 0) return;
+
+    let currentIndex = 0;
+    const imgElement = container.querySelector('img');
+    let isHovered = false;
+    
+    // Set initial image with blur and transition
+    imgElement.classList = 'w-full h-full object-cover blur-md transition-all duration-500 ease-in-out';
+    imgElement.src = images[0];
+    imgElement.style.opacity = '1';
+    
+    // Add event listeners for hover effect with smooth transition
+    container.addEventListener('mouseenter', () => {
+        isHovered = true;
+        imgElement.classList.remove('blur-md');
+        imgElement.classList.add('blur-none');
+    });
+    
+    container.addEventListener('mouseleave', () => {
+        isHovered = false;
+        imgElement.classList.remove('blur-none');
+        imgElement.classList.add('blur-md');
+    });
+    
+    if (images.length > 1) {
+        const slideInterval = setInterval(() => {
+            imgElement.style.opacity = '0';
+            
+            setTimeout(() => {
+                currentIndex = (currentIndex + 1) % images.length;
+                imgElement.src = images[currentIndex];
+                imgElement.style.opacity = '1';
+                
+                // Maintain blur state with smooth transition
+                if (!isHovered) {
+                    imgElement.classList.remove('blur-none');
+                    imgElement.classList.add('blur-md');
+                } else {
+                    imgElement.classList.remove('blur-md');
+                    imgElement.classList.add('blur-none');
+                }
+            }, 300);
+        }, 3000);
+
+        container.dataset.slideInterval = slideInterval;
+    }
+}
+
+window.openPerformerModal = function(performer) {
   let detailSource = null;
+
+  // Add overflow-hidden to body
+  document.body.style.overflow = 'hidden';
 
   // Build initial modal with a placeholder for details
   const modalHtml = `
-        <div id="performerModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-            <div class="bg-darkPrimairy p-6 rounded-lg w-full max-w-lg relative my-8">
+        <div id="performerModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 overflow-y-auto">
+            <div class="bg-darkPrimairy p-6 rounded-lg w-full max-w-lg relative my-8 mx-auto">
                 <button id="closeModal" class="absolute top-2 right-2 text-secondary hover:text-white transition duration-100">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -45,12 +78,13 @@ export function openPerformerModal(performer) {
                 </button>
                 <div class="flex flex-col items-center w-full gap-4">
                     <!-- Profile image container with fixed dimensions -->
-                    <div class="relative w-32 h-32 rounded-full overflow-hidden group cursor-pointer flex-shrink-0" id="performerImageContainer">
+                    <div class="relative w-32 h-32 rounded-[50%] overflow-hidden group cursor-pointer flex-shrink-0" id="performerImageContainer">
                         <img 
                             id="performerImage"
                             src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2'%3E%3Ccircle cx='12' cy='8' r='5'/%3E%3Cpath d='M3 21v-2a7 7 0 0 1 14 0v2'/%3E%3C/svg%3E" 
                             alt="${performer.name}" 
-                            class="w-full h-full object-cover transition-all duration-300 blur-md group-hover:blur-none"
+                            class="w-full h-full object-cover blur-md transition-all duration-500 ease-in-out"
+                            style="clip-path: circle(50%);"
                             loading="lazy"
                         >
                         <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -86,6 +120,13 @@ export function openPerformerModal(performer) {
 
     const isCloseButton = e.target.closest("#closeModal") || e.target.id === "performerModal";
     if (isCloseButton) {
+      // Clear image slider interval
+      const imageContainer = document.getElementById('performerImageContainer');
+      if (imageContainer && imageContainer.dataset.slideInterval) {
+          clearInterval(parseInt(imageContainer.dataset.slideInterval));
+      }
+      
+      document.body.style.overflow = ''; // Restore body overflow
       modal.remove();
       if (detailSource) detailSource.close();
     }
@@ -152,17 +193,10 @@ export function openPerformerModal(performer) {
 // Fetch and initialize image slider or placeholder depending on environment
 const initializeImages = (detailData) => {
     const imageContainer = document.getElementById('performerImageContainer');
-    const defaultSvg = 'data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'white\' stroke-width=\'2\'><circle cx=\'12\' cy=\'8\' r=\'5\'/><path d=\'M3 21v-2a7 7 0 0 1 14 0v2\'/></svg>';
+    if (!imageContainer) return;
 
-    if (window.location.hostname.includes('localhost')) {
-        // Use static SVG placeholder for localhost
-        const imgElement = imageContainer.querySelector('img');
-        imgElement.src = defaultSvg;
-        imgElement.style.opacity = '1';
-    } else if (detailData && detailData.image_urls && Array.isArray(detailData.image_urls)) {
-        // Use image slider for production
-        initializeImageSlider(imageContainer, detailData.image_urls);
-    }
+    // Initialize slider with performer data
+    initializeImageSlider(imageContainer, detailData);
 };
 
 // Helper function to generate detail HTML
@@ -181,17 +215,24 @@ function generateDetailHtml(data) {
         }
     };
 
-    // Clean and format value helper
-    const formatValue = (value) => {
+    // Enhanced format value helper
+    const formatValue = (value, type = 'default') => {
         if (value === null || value === undefined || value === '') return 'N/A';
-        if (typeof value === 'boolean') return value ? 'Yes' : 'No';
-        return value;
+        
+        switch(type) {
+            case 'rating':
+                return value == 0 ? 'Unknown' : `${value}/5`;
+            case 'boolean':
+                return value == 1 ? 'Yes' : 'No';
+            default:
+                return value;
+        }
     };
 
     // Group details by category
     const details = {
         basic: [
-            { label: 'Rating', value: data.rating ? `${data.rating}/5` : 'N/A' },
+            { label: 'Rating', value: formatValue(data.rating, 'rating') },
             { label: 'Birthday', value: formatDate(data.birthday) },
             { label: 'Birthplace', value: formatValue(data.birthplace) },
             { label: 'Career', value: data.career_start_year ? 
@@ -218,9 +259,8 @@ function generateDetailHtml(data) {
         additional: [
             { label: 'Tattoos', value: formatValue(data.tattoos) },
             { label: 'Piercings', value: formatValue(data.piercings) },
-            { label: 'Enhanced', value: formatValue(data.fake_boobs) },
-            { label: 'Same Sex Only', value: formatValue(data.same_sex_only) },
-            { label: 'Images', value: formatValue(data.image_amount) }
+            { label: 'Has fake boobs', value: formatValue(data.fake_boobs, 'boolean') },
+            { label: 'Only wants same Sex Only', value: formatValue(data.same_sex_only, 'boolean') },
         ]
     };
 

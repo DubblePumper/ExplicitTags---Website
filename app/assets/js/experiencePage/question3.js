@@ -1,5 +1,3 @@
-import { openPerformerModal } from '../modals/performerModal.js';
-
 const searchBar = document.getElementById('searchBar');
 const searchMan = document.getElementById('searchMan');
 const searchWoman = document.getElementById('searchWoman');
@@ -9,6 +7,7 @@ const searchResults = document.getElementById('searchResults');
 const sseUrl = window.location.origin + '/api/performers_sse.php';
 
 let eventSource;
+let debounceTimer; // Add this line
 let selectedPerformerIds = new Set();
 let includedPerformerIds = new Set();
 let excludedPerformerIds = new Set();
@@ -18,7 +17,7 @@ const DEBOUNCE_DELAY = 800; // Increased from 500 to 800ms
 const MIN_SEARCH_LENGTH = 2;
 
 // Add performerDetails cache
-const performerDetailsCache = new Map();
+window.performerDetailsCache = new Map();
 
 function startSSE() {
     if (eventSource) {
@@ -185,7 +184,7 @@ function updateSearchResults(data) {
                         const id = performer.performer_id || performer.id;
                         const detail = details.find(d => d.id === id);
                         if (detail) {
-                            performerDetailsCache.set(id, detail);
+                            window.performerDetailsCache.set(id, detail);
                         }
                     });
                 });
@@ -466,6 +465,3 @@ document.addEventListener('DOMContentLoaded', () => {
 function forceUpdateQuestion4() {
     window.dispatchEvent(new Event('myCustomUpdate'));
 }
-
-// Export the cache for use in performerModal.js
-export { performerDetailsCache };

@@ -166,3 +166,9 @@ document.head.appendChild(style);
 document.addEventListener('DOMContentLoaded', initializeFromCache);
 
 showQuestion(currentQuestion);
+
+// Make functions globally accessible
+window.nextQuestion = nextQuestion;
+window.prevQuestion = prevQuestion;
+window.toggleBackground = toggleBackground;
+window.initializeFromCache = initializeFromCache;
