@@ -87,17 +87,17 @@ input[type="checkbox"]:checked::before {
     font-weight: bold;
 }
 
-#searchResults {
+#searchResults, #performerDetailContent {
     scrollbar-width: thin; /* Firefox */
     scrollbar-color: #40a6ea #0d0d0d;
 }
-#searchResults::-webkit-scrollbar {
+#searchResults::-webkit-scrollbar, #performerDetailContent::-webkit-scrollbar {
     width: 8px;
 }
-#searchResults::-webkit-scrollbar-track {
+#searchResults::-webkit-scrollbar-track, #performerDetailContent::-webkit-scrollbar-track {
     background: #0d0d0d;
 }
-#searchResults::-webkit-scrollbar-thumb {
+#searchResults::-webkit-scrollbar-thumb, #performerDetailContent::-webkit-scrollbar-thumb {
     background-color: #40a6ea;
     border-radius: 4px;
 }

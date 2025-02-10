@@ -40,12 +40,13 @@ try {
     $performer = $stmt->fetch(PDO::FETCH_ASSOC);
     
     if ($performer) {
-        // Clean data for JSON
+        // Clean data and wrap in array
         $performer = array_map(function($value) {
             return $value === null ? "" : $value;
         }, $performer);
         
-        sendSSE('performer_detail', $performer);
+        // Send as array even for single record
+        sendSSE('performer_detail', [$performer]);
     } else {
         sendSSE('error', ['error' => 'Performer not found']);
     }
