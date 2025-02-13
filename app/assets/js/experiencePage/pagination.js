@@ -50,9 +50,9 @@ function showQuestion(index) {
     questions.forEach((question, i) => {
         if (i === index) {
             question.classList.add('opacity-100');
-            question.classList.remove('opacity-0', 'hidden');
+            question.classList.remove('opacity-0', 'invisible');
         } else {
-            question.classList.add('opacity-0', 'hidden');
+            question.classList.add('opacity-0', 'invisible');
             question.classList.remove('opacity-100');
         }
     });
@@ -97,7 +97,7 @@ function nextQuestion() {
     questions[currentQuestion].classList.remove('opacity-100');
     questions[currentQuestion].classList.add('opacity-0');
     setTimeout(() => {
-        questions[currentQuestion].classList.add('hidden');
+        questions[currentQuestion].classList.add('invisible');
         currentQuestion = Math.min(currentQuestion + 1, questions.length - 1);
         localStorage.setItem('currentQuestion', currentQuestion);
         showQuestion(currentQuestion);
@@ -115,7 +115,7 @@ function prevQuestion() {
     questions[currentQuestion].classList.remove('opacity-100');
     questions[currentQuestion].classList.add('opacity-0');
     setTimeout(() => {
-        questions[currentQuestion].classList.add('hidden');
+        questions[currentQuestion].classList.add('invisible');
         currentQuestion = Math.max(currentQuestion - 1, 0);
         localStorage.setItem('currentQuestion', currentQuestion);
         showQuestion(currentQuestion);
@@ -130,16 +130,16 @@ function checkButtons() {
     
     // Hide prev button on first question
     if (currentQuestion === 0) {
-        prevButton.classList.add('hidden');
+        prevButton.classList.add('invisible');
     } else {
-        prevButton.classList.remove('hidden');
+        prevButton.classList.remove('invisible');
     }
     
     // Hide next button on last question
     if (currentQuestion === totalQuestions - 1) {
-        nextButton.classList.add('hidden');
+        nextButton.classList.add('invisible');
     } else {
-        nextButton.classList.remove('hidden');
+        nextButton.classList.remove('invisible');
     }
 }
 
