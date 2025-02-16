@@ -12,6 +12,7 @@ function hideError(element) {
 function addImage(container, src, className) {
     let img = document.createElement('img');
     img.src = src;
+    img.loading = 'lazy'; // ensure native lazy loading is enabled
     img.classList.add(className, 'opacity-100', 'group-hover:opacity-15', 'transition-opacity', 
                      'duration-500', 'mx-auto', 'size-3/4', 'w-16', 'h-16', 'sm:w-24', 
                      'sm:h-24', 'md:w-32', 'md:h-32');

@@ -214,7 +214,7 @@ function updateSearchResults(data) {
                                              alt="${performer.name}" 
                                              class="w-full h-full blur-sm transition-all duration-300 group-hover/image:blur-none ${index >= 5 ? 'lazy' : ''}"
                                               style="clip-path: circle(50%);"
-                                             loading="${index < 5 ? 'eager' : 'lazy'}">
+                                             loading="lazy">
                                     </div>
                                     <div class="flex-1 min-w-0">
                                         <p class="text-sm font-medium text-TextWhite truncate">

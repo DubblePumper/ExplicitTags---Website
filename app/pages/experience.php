@@ -7,6 +7,9 @@ $gradients = getRandomGradientClass(true);
 ?>
 
 <body class="text-TextWhite">
+    <div id="preloader">
+        <div class="spinner"></div>
+    </div>
     <header>
         <div class="text-center mt-10 flex flex-col items-center justify-center space-y-2" data-aos="fade-down" data-aos-duration="1000">
             <h1 class="text-4xl font-bold <?php echo $gradients ?>" data-aos="fade-down" data-aos-duration="1000">Customize your experience.</h1>

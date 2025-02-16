@@ -120,4 +120,10 @@
     <meta name="theme-color" content="#12143a">
     <meta name="msapplication-TileColor" content="#12143a">
     <meta name="msapplication-TileImage" content="/assets/images/icons/mstile-144x144.png">
+
+    <!-- Preloader CSS -->
+    <link rel="stylesheet" type="text/css" href="/assets/css/preloader.css">
+
+    <!-- Preloader JS -->
+    <script src="/assets/js/preloader.js"></script>
 </head>

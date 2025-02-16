@@ -49,10 +49,12 @@ function showQuestion(index) {
     
     questions.forEach((question, i) => {
         if (i === index) {
+            // Remove hidden and display the question
+            question.classList.remove('opacity-0', 'invisible', 'hidden');
             question.classList.add('opacity-100');
-            question.classList.remove('opacity-0', 'invisible');
         } else {
-            question.classList.add('opacity-0', 'invisible');
+            // Hide non-active questions
+            question.classList.add('opacity-0', 'invisible', 'hidden');
             question.classList.remove('opacity-100');
         }
     });
