@@ -342,22 +342,23 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  function initThreeJsScene(containerId, modelPath) {
+  // Update initThreeJsScene to accept an optional callback
+  function initThreeJsScene(containerId, modelPath, onModelLoaded) {
     const container = document.getElementById(containerId);
     const width = container.clientWidth;
     const height = container.clientHeight;
-
+  
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x0d0d0d);
-
+  
     // More precise model type check
     const isMaleModel = modelPath.endsWith('/male.glb') && !modelPath.endsWith('/female.glb');
-
+  
     // Same camera setup for both models
     const camera = new THREE.PerspectiveCamera(25, width / height, 0.1, 1000);
     camera.position.set(0, 1.2, 5);
     camera.lookAt(0, 1.2, 0);
-
+  
     // Setup renderer
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(width, height);
@@ -365,34 +366,34 @@ document.addEventListener("DOMContentLoaded", () => {
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     container.appendChild(renderer.domElement);
-
+  
     // Initialize OrbitControls for user spinning with fixed x and y
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enablePan = false;  // Disallow panning so x and y stay unchanged
     controls.enableZoom = true;  // Allow zoom if needed
     controls.minPolarAngle = Math.PI / 2;
     controls.maxPolarAngle = Math.PI / 2;
-
+  
     // Improved lighting
     const ambientLight = new THREE.AmbientLight(0xffffff, 1);
     scene.add(ambientLight);
-
+  
     const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
     directionalLight.position.set(2, 2, 2);
     scene.add(directionalLight);
-
+  
     // Initialize DRACO loader
     const dracoLoader = new DRACOLoader();
     dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/'); // Use CDN path
     dracoLoader.preload();
-
+  
     // Create and configure GLTFLoader
     const loader = new GLTFLoader();
     loader.setDRACOLoader(dracoLoader);
     
     // Add loading indicator
     container.innerHTML = '<p class="text-center text-secondary">Loading 3D model...</p>';
-
+  
     // Load model with error handling
     try {
         loader.load(
@@ -432,7 +433,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 
                 model.rotation.y = -Math.PI / 12;
                 scene.add(model);
-
+  
                 // Update lighting for male model to brighten all areas
                 if (isMaleModel) {
                     // Replace existing lights with stronger ones:
@@ -464,6 +465,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     renderer.render(scene, camera);
                 }
                 animate();
+                if (onModelLoaded) onModelLoaded(model);
             },
             (xhr) => {
                 const percent = (xhr.loaded / xhr.total * 100);
@@ -478,7 +480,7 @@ document.addEventListener("DOMContentLoaded", () => {
         console.error('Error initializing loader:', error);
         container.innerHTML = '<p class="text-red-500 text-center">Error initializing 3D viewer</p>';
     }
-
+  
     // Handle window resize
     window.addEventListener('resize', () => {
         const newWidth = container.clientWidth;
@@ -488,45 +490,103 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Modify openAssignmentModal to update model on customization change
   function openAssignmentModal(type, position) {
     const modelPath = type === 'withPenis' 
         ? '/assets/3dmodels/male.glb' 
         : '/assets/3dmodels/female.glb';
     
+    // Updated modal HTML with extra customization options
     const modalHtml = `
-        <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" id="assignmentModal">
+        <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-auto" id="assignmentModal">
             <div class="bg-darkPrimairy p-6 rounded-lg w-full max-w-6xl h-auto">
                 <div class="flex justify-between items-center mb-6 border-b border-secondary pb-2">
                     <h3 class="text-xl font-semibold">Edit your own performer</h3>
-                    <button class="text-gray-400 hover:text-white close-modal">
+                    <button id="closeModal" class="text-secondary hover:text-white transition duration-100 close-modal">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
                 </div>
-                <div class="flex gap-6">
-                    <div class="flex items-center justify-center">
-                        <div id="modelViewer" class="w-[400px] h-[500px] bg-darkPrimairy/50 rounded-lg"></div>
+                <div class="flex flex-col md:flex-row gap-6">
+                    <div class="flex flex-col items-center justify-center w-full md:w-[400px] h-[500px]">
+                        <div id="modelViewer" class="w-full h-full bg-darkPrimairy/50 rounded-lg"></div>
                     </div>
+                    <!-- Vertical separator line on medium screens and up -->
+                    <div class="hidden md:block border-l border-secondary"></div>
                     <div class="flex-1">
-                        <div id="modalContent" class="grid grid-cols-2 gap-4 max-h-[500px] overflow-y-auto pr-2">
-                            <!-- Content will be dynamically populated -->
+                        <div id="customOptions" class="p-4 bg-darkPrimairy/30 rounded-lg">
+                            <h4 class="text-xl font-semibold mb-4">3D Model Customization</h4>
+                            <!-- New customization inputs -->
+                            <div class="mb-4">
+                                <label for="skinColor" class="block text-sm mb-1">Skin Color</label>
+                                <input type="color" id="skinColor" value="#f1c27d">
+                            </div>
+                            <div class="mb-4">
+                                <label for="height" class="block text-sm mb-1">Height (m)</label>
+                                <input type="number" id="height" step="0.01" min="1" max="2.5" value="1.70">
+                            </div>
+                            <div class="mb-4">
+                                <label for="hairColor" class="block text-sm mb-1">Hair Color</label>
+                                <input type="color" id="hairColor" value="#3b2c29">
+                            </div>
                         </div>
                     </div>
                 </div>
+                <!-- New modal content container for performer selection -->
+                <div id="modalContent"></div>
+                <!-- ...existing code if needed... -->
             </div>
         </div>
     `;
-
-    // Add modal to DOM
+    
     document.body.insertAdjacentHTML('beforeend', modalHtml);
 
-    // Initialize 3D scene after modal is added to DOM
+    // Declare variable for the loaded custom model
+    let customModel = null;
+    // Initialize 3D scene with a callback to assign customModel
     requestAnimationFrame(() => {
-        initThreeJsScene('modelViewer', modelPath);
+      initThreeJsScene('modelViewer', modelPath, (model) => {
+        customModel = model;
+        attachCustomizationListeners();
+      });
     });
-
-    // Rest of the existing modal code...
+    
+    // Function: attach customization change listeners to inputs
+    function attachCustomizationListeners() {
+      const skinInput = document.getElementById('skinColor');
+      const heightInput = document.getElementById('height');
+      const hairInput = document.getElementById('hairColor');
+  
+      // Update model appearance based on the current customization values
+      function updateModelCustomization() {
+        if (!customModel) return;
+        const newSkinColor = new THREE.Color(skinInput.value);
+        const newHairColor = new THREE.Color(hairInput.value);
+        const newHeight = parseFloat(heightInput.value) || 1.70; // in meters
+  
+        // Traverse model and update materials
+        customModel.traverse((child) => {
+          if (child.isMesh && child.material) {
+            // Assume mesh named "hair" is hair material, others update skin tone
+            if (child.name.toLowerCase().includes('hair')) {
+              child.material.color = newHairColor;
+            } else {
+              child.material.color = newSkinColor;
+            }
+          }
+        });
+        // Adjust scale to mimic height change (assuming default height = 1.70m)
+        const scaleFactor = newHeight / 1.70;
+        customModel.scale.setScalar(scaleFactor);
+      }
+  
+      // Add event listeners to update model on changes
+      skinInput.addEventListener('input', updateModelCustomization);
+      heightInput.addEventListener('input', updateModelCustomization);
+      hairInput.addEventListener('input', updateModelCustomization);
+    }
+    
     const modal = document.getElementById('assignmentModal');
     modal.addEventListener('click', (e) => {
         if (e.target.closest('.close-modal') || e.target === modal) {
@@ -534,29 +594,33 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Populate modal content with available performers
-    const { includedPerformers } = loadSummaryData();
-    const validPerformers = includedPerformers.filter(p => 
-        checkValidDrop(type, p.gender)
-    );
-
+    // Populate modal content with available performers if modalContent exists
     const modalContent = document.getElementById('modalContent');
-
-    // Add click handler for performer selection
-    modalContent.addEventListener('click', (e) => {
-        const performerOption = e.target.closest('.performer-option');
-        if (!performerOption) return;
-
-        const performerData = {
-            performerId: performerOption.dataset.performerId,
-            name: performerOption.dataset.performerName,
-            gender: performerOption.dataset.performerGender
-        };
-
-        setCache(`assignment_${type}_${position}`, performerData);
-        modal.remove();
-        renderSummary();
-    });
+    if (modalContent) {
+        modalContent.addEventListener('click', (e) => {
+            const performerOption = e.target.closest('.performer-option');
+            if (!performerOption) return;
+    
+            // Retrieve customization values
+            const skinColor = document.getElementById('skinColor')?.value;
+            const height = document.getElementById('height')?.value;
+            const hairColor = document.getElementById('hairColor')?.value;
+    
+            const performerData = {
+                performerId: performerOption.dataset.performerId,
+                name: performerOption.dataset.performerName,
+                gender: performerOption.dataset.performerGender,
+                skinColor,  // new property
+                height,     // new property
+                hairColor   // new property
+            };
+    
+            setCache(`assignment_${type}_${position}`, performerData);
+            modal.remove();
+            renderSummary();
+        });
+    }
+    
   }
 
   // Separate function for remove handler
