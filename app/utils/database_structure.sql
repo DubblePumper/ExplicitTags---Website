@@ -93,6 +93,8 @@ CREATE TABLE IF NOT EXISTS `processed_videos` (
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `user_ip` varchar(45) DEFAULT NULL,
+  `download_progress` float DEFAULT '0',
+  `status_message` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `processing_status` (`processing_status`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

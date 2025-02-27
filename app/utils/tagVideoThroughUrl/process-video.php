@@ -6,7 +6,9 @@ ob_start();
 
 // Include only the configuration files first to avoid output
 require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/config.php';
-require_once $_SERVER['DOCUMENT_ROOT'] . '/utils/tagVideoThroughUrl/video-downloader.php';
+
+// Autoload composer dependencies
+require_once $_SERVER['DOCUMENT_ROOT'] . '/assets/vendor/autoload.php';
 
 // Initialize variables
 $error = null;
@@ -146,22 +148,62 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$error) {
     // If no errors, insert into database
     if (!$error) {
         try {
-            // Fix: Add columns and values clauses to the INSERT statement
+            // Insert into database with status message
             $stmt = $pdo->prepare("
                 INSERT INTO processed_videos 
-                (source_type, source_path, video_url, processing_status, user_ip, download_progress) 
-                VALUES (:source_type, :source_path, :video_url, 'pending', :user_ip, 0)
+                (source_type, source_path, video_url, processing_status, user_ip, download_progress, status_message) 
+                VALUES (:source_type, :source_path, :video_url, 'pending', :user_ip, 0, :status_message)
             ");
+            
+            $statusMessage = $sourceType === 'upload' ? 'Upload complete, waiting for processing' : 'Waiting to start download';
             
             $stmt->execute([
                 ':source_type' => $sourceType,
                 ':source_path' => $sourcePath,
                 ':video_url' => $videoUrl,
-                ':user_ip' => $userIp
+                ':user_ip' => $userIp,
+                ':status_message' => $statusMessage
             ]);
             
             $videoId = $pdo->lastInsertId();
             $success = true;
+            
+            // If URL submission, trigger download asynchronously
+            if ($sourceType === 'url') {
+                // Update status to "processing" for URLs
+                $updateStmt = $pdo->prepare("
+                    UPDATE processed_videos 
+                    SET processing_status = 'processing',
+                        status_message = 'Queued for download'
+                    WHERE id = :id
+                ");
+                
+                $updateStmt->execute([':id' => $videoId]);
+                $processingStatus = 'processing';
+                
+                // Trigger the background worker process (non-blocking)
+                $rootPath = $_SERVER['DOCUMENT_ROOT'];
+                $cmd = "php {$rootPath}/utils/workers/process_video_queue.php {$videoId} > /dev/null 2>&1 &";
+                
+                if (stripos(PHP_OS, 'WIN') === 0) {
+                    // Windows - use start command
+                    pclose(popen("start /B php {$rootPath}\\utils\\workers\\process_video_queue.php {$videoId}", "r"));
+                } else {
+                    // Linux/Unix - use nohup or background process
+                    exec($cmd);
+                }
+            } else {
+                // For direct uploads, just update status to processing
+                $updateStmt = $pdo->prepare("
+                    UPDATE processed_videos 
+                    SET processing_status = 'processing',
+                        status_message = 'Processing uploaded video'
+                    WHERE id = :id
+                ");
+                
+                $updateStmt->execute([':id' => $videoId]);
+                $processingStatus = 'processing';
+            }
             
             // If we have a return URL and it's a safe path, redirect with the video ID
             if ($returnUrl && (strpos($returnUrl, '/') === 0)) {
@@ -175,16 +217,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$error) {
                 header("Location: {$returnUrl}{$separator}id={$videoId}");
                 exit;
             }
-            
-            // Update status to "processing"
-            $updateStmt = $pdo->prepare("
-                UPDATE processed_videos 
-                SET processing_status = 'processing' 
-                WHERE id = :id
-            ");
-            
-            $updateStmt->execute([':id' => $videoId]);
-            $processingStatus = 'processing';
             
         } catch (PDOException $e) {
             error_log("Database error during insert: " . $e->getMessage());
@@ -220,7 +252,7 @@ if (!$success && !$error && isset($_GET['id']) && is_numeric($_GET['id'])) {
 if ($videoId && !$processingStatus) {
     try {
         $stmt = $pdo->prepare("
-            SELECT processing_status 
+            SELECT processing_status, status_message 
             FROM processed_videos 
             WHERE id = :id
         ");
@@ -230,6 +262,7 @@ if ($videoId && !$processingStatus) {
         
         if ($result) {
             $processingStatus = $result['processing_status'];
+            $statusMessage = $result['status_message'] ?? '';
         }
     } catch (PDOException $e) {
         error_log("Error checking status: " . $e->getMessage());
@@ -279,7 +312,8 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/include-all.php';
                                 <div id="progress-bar" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-gradient-to-r from-secondary to-tertery" style="width: 0%"></div>
                             </div>
                             <div class="flex justify-between text-xs text-gray-400">
-                                <span>Upload Complete</span>
+                                <span>Upload</span>
+                                <span>Download</span>
                                 <span>AI Analysis</span>
                                 <span>Results</span>
                             </div>
@@ -289,11 +323,11 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/include-all.php';
                             if ($processingStatus === 'pending') {
                                 echo "Waiting to start processing...";
                             } elseif ($processingStatus === 'processing') {
-                                echo "AI is analyzing your video...";
+                                echo isset($statusMessage) ? htmlspecialchars($statusMessage) : "Processing your video...";
                             } elseif ($processingStatus === 'completed') {
                                 echo "Analysis complete!";
                             } elseif ($processingStatus === 'failed') {
-                                echo "Processing failed. Please try again.";
+                                echo isset($statusMessage) ? htmlspecialchars($statusMessage) : "Processing failed. Please try again.";
                             }
                             ?>
                         </p>
