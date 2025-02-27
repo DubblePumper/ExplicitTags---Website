@@ -1,5 +1,14 @@
 RewriteEngine On
 
+# Zorg ervoor dat CSS correct wordt geserveerd
+AddType text/css .css
+
+# Statische bestanden uitsluiten van rewrites
+RewriteCond %{REQUEST_URI} !^/assets/ [NC]
+
+# Zorg ervoor dat assets correct worden geladen
+RewriteRule ^assets/(.*)$ assets/$1 [L,NC]
+
 # First, check if we're already on HTTPS
 RewriteCond %{HTTPS} =on [OR]
 RewriteCond %{HTTP:X-Forwarded-Proto} =https
@@ -7,7 +16,6 @@ RewriteRule ^ - [E=PROTO:https]
 
 RewriteCond %{HTTP_HOST} ^www.explicittags.com [NC]
 RewriteRule (.*) https://explicittags.com/$1 [L,R=301]
-
 
 # Force HTTPS if not already on it and not accessing localhost
 RewriteCond %{ENV:PROTO} !=https
@@ -20,7 +28,6 @@ RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 # Security headers
 Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains" env=HTTPS
 Header always set Content-Security-Policy "upgrade-insecure-requests"
-Header always set X-Content-Type-Options "nosniff"
 Header always set X-Frame-Options "SAMEORIGIN"
 Header always set X-XSS-Protection "1; mode=block"
 Header always set Referrer-Policy "strict-origin-when-cross-origin"
@@ -36,13 +43,10 @@ Header always set Access-Control-Allow-Headers "Content-Type"
     Header always set Content-Type "text/event-stream"
 </FilesMatch>
 
-
 # Redirect long URL to short URL - updated for both localhost and domain
 RewriteCond %{HTTP_HOST} ^localhost:8000$ [OR]
 RewriteCond %{HTTP_HOST} ^127\.0\.0\.1:8000$ [OR]
 RewriteCond %{HTTP_HOST} ^explicittags\.com$
-
-# Alleen redirect als de originele aanvraag process-video.php bevat
 RewriteCond %{THE_REQUEST} \s/.*tagVideoThroughUrl/process-video\.php [NC]
 RewriteRule ^utils/tagVideoThroughUrl/process-video\.php$ /utils/process-video [R=301,L]
 

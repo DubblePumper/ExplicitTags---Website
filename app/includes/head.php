@@ -24,14 +24,6 @@ $pageKeywords = isset($pageKeywords) ? $pageKeywords : "adult, video analysis, A
     
     <!-- Favicon -->
     <link rel="icon" href="/assets/favicon.ico" type="image/x-icon">
-    
-    <!-- Stylesheets with explicit type attributes -->
-    <link href="/assets/css/tailwind.min.css" rel="stylesheet" type="text/css">
-    <link href="/assets/css/custom.css" rel="stylesheet" type="text/css">
-    <link href="/assets/css/aos.css" rel="stylesheet" type="text/css">
-    
-    <!-- Add preloading for critical resources -->
-    <link rel="preload" href="/assets/css/tailwind.min.css" as="style" type="text/css">
 
     <!-- Open Graph tags for social sharing -->
     <meta property="og:title" content="ExplicitTags - AI Adult Content Analyzer">
