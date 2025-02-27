@@ -5,6 +5,10 @@ RewriteCond %{HTTPS} =on [OR]
 RewriteCond %{HTTP:X-Forwarded-Proto} =https
 RewriteRule ^ - [E=PROTO:https]
 
+RewriteCond %{HTTP_HOST} ^www.explicittags.com [NC]
+RewriteRule (.*) https://explicittags.com/$1 [L,R=301]
+
+
 # Force HTTPS if not already on it and not accessing localhost
 RewriteCond %{ENV:PROTO} !=https
 RewriteCond %{HTTP_HOST} !^localhost [NC]
@@ -31,6 +35,19 @@ Header always set Access-Control-Allow-Headers "Content-Type"
     Header always set Cache-Control "no-cache"
     Header always set Content-Type "text/event-stream"
 </FilesMatch>
+
+
+# Redirect long URL to short URL - updated for both localhost and domain
+RewriteCond %{HTTP_HOST} ^localhost:8000$ [OR]
+RewriteCond %{HTTP_HOST} ^127\.0\.0\.1:8000$ [OR]
+RewriteCond %{HTTP_HOST} ^explicittags\.com$
+
+# Alleen redirect als de originele aanvraag process-video.php bevat
+RewriteCond %{THE_REQUEST} \s/.*tagVideoThroughUrl/process-video\.php [NC]
+RewriteRule ^utils/tagVideoThroughUrl/process-video\.php$ /utils/process-video [R=301,L]
+
+# Handle de clean URL intern
+RewriteRule ^utils/process-video$ /utils/tagVideoThroughUrl/process-video.php [L]
 
 # Handle index path
 RewriteCond %{REQUEST_FILENAME} !-f

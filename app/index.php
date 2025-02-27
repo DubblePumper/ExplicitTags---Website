@@ -14,9 +14,12 @@ $gradients =   getRandomGradientClass(true);
         </div>
     </header>
     <main>
-        <div class="flex justify-center mt-60">
-            <a class="hover:transition hover:duration-[150ms] px-4 py-2 bg-primary text-white rounded border border-secondary hover:bg-secondary hover:text-gray-950 " data-aos="fade-up" data-aos-duration="1500" href="experience.php">
-                Click here to start!
+        <div class="flex flex-col items-center mt-60 space-y-6">
+            <a class="hover:transition hover:duration-[150ms] px-4 py-2 bg-primary text-white rounded border border-secondary hover:bg-secondary hover:text-gray-950" data-aos="fade-up" data-aos-duration="1500" href="experience.php">
+                Click here to customize your search
+            </a>
+            <a class="hover:transition hover:duration-[150ms] px-4 py-2 bg-primary text-white rounded border border-secondary hover:bg-secondary hover:text-gray-950" data-aos="fade-up" data-aos-duration="1500" href="tag.php">
+                Or tag an video yourself
             </a>
         </div>
     </main>

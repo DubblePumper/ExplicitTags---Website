@@ -1,15 +1,38 @@
+<?php
+// Remove any whitespace or output before opening PHP tag
+
+// Check if we need to buffer output in files that include head.php
+if (!ob_get_level()) {
+    ob_start();
+}
+
+// Define default values
+$pageTitle = isset($pageTitle) ? $pageTitle : "ExplicitTags - Adult Video AI Analysis";
+$pageDescription = isset($pageDescription) ? $pageDescription : "Upload your adult videos and our AI will identify performers and tags";
+$pageKeywords = isset($pageKeywords) ? $pageKeywords : "adult, video analysis, AI identification, porn tags, performer recognition";
+?>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <!-- Character encoding for the document -->
     <meta charset="UTF-8">
-
-    <!-- Viewport settings for responsive design -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <!-- SEO meta tags -->
-    <meta name="description" content="ExplicitTags - Advanced AI-powered adult content analyzer and recommender system">
-    <meta name="keywords" content="adult content, AI analysis, performer recognition, content recommendations, adult tags">
-    <meta name="robots" content="noindex, nofollow">
-    <meta name="author" content="Sander | DubblePumper">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    
+    <title><?php echo htmlspecialchars($pageTitle); ?></title>
+    <meta name="description" content="<?php echo htmlspecialchars($pageDescription); ?>">
+    <meta name="keywords" content="<?php echo htmlspecialchars($pageKeywords); ?>">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="/assets/favicon.ico" type="image/x-icon">
+    
+    <!-- Stylesheets with explicit type attributes -->
+    <link href="/assets/css/tailwind.min.css" rel="stylesheet" type="text/css">
+    <link href="/assets/css/custom.css" rel="stylesheet" type="text/css">
+    <link href="/assets/css/aos.css" rel="stylesheet" type="text/css">
+    
+    <!-- Add preloading for critical resources -->
+    <link rel="preload" href="/assets/css/tailwind.min.css" as="style" type="text/css">
+    <link rel="preload" href="/assets/js/main.js" as="script">
 
     <!-- Open Graph tags for social sharing -->
     <meta property="og:title" content="ExplicitTags - AI Adult Content Analyzer">
@@ -27,19 +50,14 @@
     <!-- Canonical link to avoid duplicate content issues -->
     <link rel="canonical" href="https://explicittags.com/">
 
-    <!-- Title of the document -->
-    <title>ExplicitTags - AI Adult Content Analyzer</title>
-
     <!-- AOS Animation CDN -->
-    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" type="text/css">
 
     <!-- interactjs for drag and drop -->
     <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
 
-
     <!-- tailwindCSS -->
     <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
-
 
     <style type="text/tailwindcss">
 
@@ -79,7 +97,7 @@
         crossorigin="anonymous"></script>
     <!-- Stylesheets and fonts -->
     <link rel="stylesheet" type="text/css" href="/assets/css/style.css?v=<?php echo time(); ?>">
-    <link href="https://fonts.googleapis.com/css?family=Helvetica|Roboto" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Helvetica|Roboto" rel="stylesheet" type="text/css">
 
     <!-- threeJS -->
     <script async src="https://unpkg.com/es-module-shims/dist/es-module-shims.js"></script>
@@ -118,7 +136,6 @@
     <link rel="apple-touch-icon" href="/assets/images/icons/ExplicitTags-logo-SVG-NoQuote.svg" type="image/svg+xml">
 
     <!-- Additional meta tags -->
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="theme-color" content="#12143a">
     <meta name="msapplication-TileColor" content="#12143a">
     <meta name="msapplication-TileImage" content="/assets/images/icons/mstile-144x144.png">
