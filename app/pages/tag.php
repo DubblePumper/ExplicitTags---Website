@@ -54,8 +54,7 @@ if ($redirect && $videoId) {
     <header>
         <div class="text-center mt-4 md:mt-10 flex flex-col items-center justify-center space-y-1 md:space-y-2 px-4" data-aos="fade-down" data-aos-duration="1000">
             <h1 class="text-2xl md:text-4xl font-bold bg-gradient-to-bl from-secondary to-tertery bg-clip-text text-transparent" data-aos="fade-down" data-aos-duration="1000">Adult Video AI Analysis</h1>
-            <h2 class="text-lg md:text-xl bg-gradient-to-bl from-secondary to-tertery bg-clip-text text-transparent" data-aos="fade-left" data-aos-duration="1000">Upload your adult content</h2>
-            <h3 class="text-sm md:text-base bg-gradient-to-bl from-secondary to-tertery bg-clip-text text-transparent" data-aos="fade-right" data-aos-duration="1000">and our AI will identify performers and tags</h3>
+            <h2 class="text-lg md:text-xl bg-gradient-to-bl from-secondary to-tertery bg-clip-text text-transparent" data-aos="fachfade-right" data-aos-duration="1000">and our AI will identify performers and tags</h3>
         </div>
     </header>
     <main class="min-h-screen">

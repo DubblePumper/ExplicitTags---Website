@@ -1,100 +1,108 @@
 <?php
-// Set headers for JSON response
+/**
+ * Ajax endpoint to check video processing status
+ */
+
+// Set appropriate headers for AJAX
 header('Content-Type: application/json');
+header('Cache-Control: no-cache, no-store, must-revalidate');
+header('Pragma: no-cache');
+header('Expires: 0');
 
-// Include configuration with proper path resolution
-require_once dirname(dirname(dirname(__DIR__))) . '/app/includes/config.php';
-
-// Enable error reporting for debugging
-error_reporting(E_ALL);
-ini_set('display_errors', 0); // Don't display errors in JSON response
-
-// Initialize response data
-$response = [
-    'status' => 'unknown',
-    'results' => null
-];
-
-// Check for video ID in the query string
-if (isset($_GET['id']) && is_numeric($_GET['id'])) {
-    $videoId = (int)$_GET['id'];
-    
-    try {
-        // Connect to database
-        $pdo = new PDO($dsn, $db_user, $db_pass, $options);
-        
-        // Query for the video's processing status
-        $stmt = $pdo->prepare("
-            SELECT processing_status, result_data 
-            FROM processed_videos 
-            WHERE id = :id
-        ");
-        
-        $stmt->execute([':id' => $videoId]);
-        $result = $stmt->fetch();
-        
-        if ($result) {
-            // Set status from database
-            $response['status'] = $result['processing_status'];
-            
-            // If processing is complete, include the results
-            if ($result['processing_status'] === 'completed' && $result['result_data']) {
-                $response['results'] = json_decode($result['result_data'], true);
-            }
-            
-            // For testing: Simulate a status progression if needed
-            // This helps with UI testing when no actual processing is happening
-            if (!isset($_GET['no_simulate'])) {
-                $created_time = null;
-                $stmt = $pdo->prepare("SELECT created_at FROM processed_videos WHERE id = :id");
-                $stmt->execute([':id' => $videoId]);
-                $time_result = $stmt->fetch();
-                if ($time_result) {
-                    $created_time = strtotime($time_result['created_at']);
-                    $time_diff = time() - $created_time;
-                    
-                    // Simulate status progression based on time elapsed
-                    if ($response['status'] === 'pending' && $time_diff > 10) {
-                        $response['status'] = 'processing';
-                        $update = $pdo->prepare("UPDATE processed_videos SET processing_status = 'processing' WHERE id = :id");
-                        $update->execute([':id' => $videoId]);
-                    }
-                    else if ($response['status'] === 'processing' && $time_diff > 30) {
-                        // After 30 seconds, complete the processing with sample results
-                        $response['status'] = 'completed';
-                        $sample_results = json_encode([
-                            'performers' => [
-                                ['name' => 'Test Performer 1', 'confidence' => 87],
-                                ['name' => 'Test Performer 2', 'confidence' => 65]
-                            ],
-                            'tags' => ['sample tag 1', 'sample tag 2', 'test tag 3']
-                        ]);
-                        
-                        $update = $pdo->prepare("UPDATE processed_videos SET processing_status = 'completed', result_data = :result_data WHERE id = :id");
-                        $update->execute([
-                            ':id' => $videoId,
-                            ':result_data' => $sample_results
-                        ]);
-                        
-                        $response['results'] = json_decode($sample_results, true);
-                    }
-                }
-            }
-        } else {
-            $response['status'] = 'error';
-            $response['message'] = 'Video not found';
-        }
-        
-    } catch (PDOException $e) {
-        // Log error but don't expose details to client
-        error_log("Database error in check-processing-status: " . $e->getMessage());
-        $response['status'] = 'error';
-        $response['message'] = 'Database error occurred';
-    }
+// Allow AJAX access from any origin during development/Docker
+// For Docker environments, we need to be more permissive with CORS
+if (isset($_SERVER['HTTP_ORIGIN'])) {
+    header("Access-Control-Allow-Origin: {$_SERVER['HTTP_ORIGIN']}");
 } else {
-    $response['status'] = 'error';
-    $response['message'] = 'Missing or invalid video ID';
+    // When direct access or missing origin header
+    header("Access-Control-Allow-Origin: *");
+}
+header('Access-Control-Allow-Credentials: true');
+header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+header('Access-Control-Allow-Headers: Origin, Content-Type, Accept');
+
+// Handle preflight OPTIONS requests for CORS
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    // Just exit with 200 OK status for preflight requests
+    exit(0);
 }
 
-// Return JSON response
+// Include configuration file
+require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/config.php';
+
+// Initialize response array
+$response = [
+    'status' => 'unknown',
+    'progress' => 0,
+    'results' => null,
+    'error' => null
+];
+
+// Get video ID from query string
+$videoId = isset($_GET['id']) ? (int)$_GET['id'] : null;
+
+// Log the request to help with debugging
+error_log("Status check request received for video ID: {$videoId}");
+
+// Validate video ID
+if (!$videoId || $videoId <= 0) {
+    $response['error'] = 'Invalid video ID';
+    echo json_encode($response);
+    exit;
+}
+
+// Create PDO instance
+try {
+    $pdo = testDBConnection();
+    
+    if (!$pdo) {
+        throw new Exception('Database connection failed');
+    }
+    
+    // Query database for video status
+    $stmt = $pdo->prepare("
+        SELECT processing_status, download_progress, result_data
+        FROM processed_videos
+        WHERE id = :id
+    ");
+    
+    $stmt->execute([':id' => $videoId]);
+    $video = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    // Check if video exists
+    if (!$video) {
+        $response['error'] = 'Video not found';
+        echo json_encode($response);
+        exit;
+    }
+    
+    // Update response with video data
+    $response['status'] = $video['processing_status'];
+    
+    // If status is downloading, include download progress
+    if ($video['processing_status'] === 'downloading') {
+        $response['progress'] = (int)$video['download_progress'];
+    }
+    
+    // Include results if available
+    if ($video['result_data']) {
+        $results = json_decode($video['result_data'], true);
+        $response['results'] = $results;
+    }
+    
+    // Success flag for easier frontend checking
+    $response['success'] = true;
+    
+} catch (PDOException $e) {
+    $response['error'] = 'Database error: ' . $e->getMessage();
+    error_log('Database error in check-processing-status.php: ' . $e->getMessage());
+} catch (Exception $e) {
+    $response['error'] = 'Error: ' . $e->getMessage();
+    error_log('Error in check-processing-status.php: ' . $e->getMessage());
+}
+
+// Log the response for debugging
+error_log("Status check response for video ID {$videoId}: " . json_encode($response));
+
+// Return response as JSON
 echo json_encode($response);
