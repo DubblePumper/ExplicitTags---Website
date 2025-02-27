@@ -58,6 +58,51 @@ function getSupportedNames() {
     return $names;
 }
 
-// Initialize PDO connection
+// Function to create necessary database tables if they don't exist
+function ensureTablesExist($pdo) {
+    try {
+        // Table for processed videos
+        $pdo->exec("CREATE TABLE IF NOT EXISTS processed_videos (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            source_type ENUM('upload', 'url') NOT NULL,
+            source_path VARCHAR(255) DEFAULT NULL,
+            video_url TEXT DEFAULT NULL,
+            processing_status ENUM('pending', 'processing', 'completed', 'failed') DEFAULT 'pending',
+            result_data JSON DEFAULT NULL,
+            user_ip VARCHAR(45) DEFAULT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )");
+        
+        // Table for video processing queue
+        $pdo->exec("CREATE TABLE IF NOT EXISTS video_processing_queue (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            video_id INT NOT NULL,
+            status ENUM('pending', 'processing', 'completed', 'failed') DEFAULT 'pending',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            FOREIGN KEY (video_id) REFERENCES processed_videos(id) ON DELETE CASCADE
+        )");
+        
+        // Table for supported adult websites
+        $pdo->exec("CREATE TABLE IF NOT EXISTS supported_adult_websites (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            website_name VARCHAR(100) NOT NULL,
+            website_url VARCHAR(255) NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )");
+        
+        return true;
+    } catch (PDOException $e) {
+        error_log("Error creating tables: " . $e->getMessage());
+        return false;
+    }
+}
+
+// Initialize PDO connection and ensure tables exist
 $pdo = testDBConnection();
+if ($pdo) {
+    ensureTablesExist($pdo);
+}
 

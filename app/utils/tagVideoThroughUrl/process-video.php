@@ -30,11 +30,11 @@ try {
 
 // Helper function to check if URL is from a supported adult website
 function isUrlFromSupportedSite($url, $pdo) {
+    $supportedDomains = [];
+    
     try {
-        // Get supported domains from database
+        // Get all supported websites from the database
         $stmt = $pdo->query("SELECT website_url FROM supported_adult_websites");
-        $supportedDomains = [];
-        
         if ($stmt) {
             $sites = $stmt->fetchAll(PDO::FETCH_COLUMN);
             
