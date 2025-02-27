@@ -138,78 +138,80 @@ if ($redirect && $videoId) {
     <script src="/assets/js/tagPage/functions.js?v=<?php echo time(); ?>"></script>
     
     <script>
-        // Add URL validation functionality
-        document.addEventListener('DOMContentLoaded', function() {
-            const videoUrlInput = document.getElementById('videoUrl');
-            const urlErrorElement = document.getElementById('urlError');
-            const submitButton = document.getElementById('submitButton');
+    // Improved validation function with error handling
+    document.addEventListener('DOMContentLoaded', function() {
+        const videoUrlInput = document.getElementById('videoUrl');
+        const urlErrorElement = document.getElementById('urlError');
+        const submitButton = document.getElementById('submitButton');
+        
+        videoUrlInput.addEventListener('input', validateUrl);
+        videoUrlInput.addEventListener('change', validateUrl);
+        
+        function validateUrl() {
+            const url = videoUrlInput.value.trim();
             
-            videoUrlInput.addEventListener('input', validateUrl);
-            videoUrlInput.addEventListener('change', validateUrl);
+            // Clear previous error
+            urlErrorElement.textContent = '';
+            urlErrorElement.classList.add('hidden');
+            videoUrlInput.classList.remove('invalid-input', 'shake');
             
-            function validateUrl() {
-                const url = videoUrlInput.value.trim();
-                
-                // Clear previous error
-                urlErrorElement.textContent = '';
-                urlErrorElement.classList.add('hidden');
-                videoUrlInput.classList.remove('invalid-input', 'shake');
-                
-                // Skip validation if field is empty
-                if (!url) {
-                    submitButton.disabled = true;
-                    return;
-                }
-                
-                // Check URL format
-                if (!isValidUrl(url)) {
-                    showUrlError('Please enter a valid URL');
-                    submitButton.disabled = true;
-                    return;
-                }
-                
-                // Check if URL is from a supported site
-                if (!isFromSupportedSite(url)) {
-                    showUrlError('URL must be from a supported website');
-                    submitButton.disabled = true;
-                    return;
-                }
-                
-                // Enable submit button if validation passes
-                submitButton.disabled = false;
+            // Skip validation if field is empty
+            if (!url) {
+                submitButton.disabled = true;
+                return;
             }
             
-            function isValidUrl(url) {
-                try {
-                    new URL(url);
-                    return true;
-                } catch (e) {
-                    return false;
-                }
+            // Check URL format
+            if (!isValidUrl(url)) {
+                showUrlError('Please enter a valid URL');
+                submitButton.disabled = true;
+                return;
             }
             
-            function isFromSupportedSite(url) {
-                try {
-                    const urlObj = new URL(url);
-                    const hostname = urlObj.hostname.replace(/^www\./, '');
-                    
-                    return window.supportedSites.some(site => {
-                        const siteDomain = site.toLowerCase().replace(/\s/g, '');
-                        return hostname.includes(siteDomain.toLowerCase());
-                    });
-                } catch (e) {
-                    return false;
-                }
+            // Check if URL is from a supported site
+            if (!isFromSupportedSite(url)) {
+                showUrlError('URL must be from a supported website');
+                submitButton.disabled = true;
+                return;
             }
             
-            function showUrlError(message) {
-                urlErrorElement.textContent = message;
-                urlErrorElement.classList.remove('hidden');
-                videoUrlInput.classList.add('invalid-input', 'shake');
+            // Enable submit button if validation passes
+            submitButton.disabled = false;
+        }
+        
+        // Added error handling for direct URLs
+        function isValidUrl(url) {
+            try {
+                new URL(url);
+                return true;
+            } catch (e) {
+                return false;
             }
-        });
-    </script>
-    
+        }
+        
+        function isFromSupportedSite(url) {
+            try {
+                const urlObj = new URL(url);
+                const hostname = urlObj.hostname.replace(/^www\./, '');
+                
+                // More robust hostname matching
+                return window.supportedSites.some(site => {
+                    const siteDomain = site.toLowerCase().replace(/\s/g, '');
+                    return hostname === siteDomain || hostname.endsWith('.' + siteDomain);
+                });
+            } catch (e) {
+                return false;
+            }
+        }
+        
+        function showUrlError(message) {
+            urlErrorElement.textContent = message;
+            urlErrorElement.classList.remove('hidden');
+            videoUrlInput.classList.add('invalid-input', 'shake');
+        }
+    });
+</script>
+
     <script>
         // Add code to handle form submission via JavaScript
         document.addEventListener('DOMContentLoaded', function() {
