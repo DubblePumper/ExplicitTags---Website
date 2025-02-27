@@ -32,7 +32,6 @@ $pageKeywords = isset($pageKeywords) ? $pageKeywords : "adult, video analysis, A
     
     <!-- Add preloading for critical resources -->
     <link rel="preload" href="/assets/css/tailwind.min.css" as="style" type="text/css">
-    <link rel="preload" href="/assets/js/main.js" as="script">
 
     <!-- Open Graph tags for social sharing -->
     <meta property="og:title" content="ExplicitTags - AI Adult Content Analyzer">

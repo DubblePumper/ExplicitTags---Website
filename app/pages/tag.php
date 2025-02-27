@@ -1,25 +1,37 @@
 <?php
 require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/include-all.php';
 require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/config.php';
+require_once $_SERVER['DOCUMENT_ROOT'] . '/utils/tagVideoThroughUrl/database-functions.php';
 $gradients = getRandomGradientClass(true);
 
-// Define supported websites - organized as name/domain pairs for better display and validation
-$supportedWebsitesData = [
-    ['name' => 'Pornhub', 'domain' => 'pornhub.com'],
-    ['name' => 'RedTube', 'domain' => 'redtube.com'],
-    ['name' => 'SpankBang', 'domain' => 'spankbang.com'],
-    ['name' => 'Tnaflix', 'domain' => 'tnaflix.com'],
-    ['name' => 'Tube8', 'domain' => 'tube8.com'],
-    ['name' => 'xHamster', 'domain' => 'xhamster.com'],
-    ['name' => 'XNXX', 'domain' => 'xnxx.com'],
-    ['name' => 'XVideos', 'domain' => 'xvideos.com'],
-    ['name' => 'YouPorn', 'domain' => 'youporn.com'],
-];
+// Get supported websites from the database
+$supportedWebsitesData = getSupportedWebsites();
 
-// Create separate arrays for display and validation
-$supportedSiteNames = array_column($supportedWebsitesData, 'name');
-$supportedDomains = array_column($supportedWebsitesData, 'domain');
-$supportedSites = array_merge($supportedSiteNames, $supportedDomains);
+// If database query fails, use fallback data
+if (empty($supportedWebsitesData)) {
+    // Fallback data if database query fails
+    $supportedWebsitesData = [
+        ['website_name' => 'Pornhub', 'website_url' => 'https://pornhub.com'],
+        ['website_name' => 'RedTube', 'website_url' => 'https://redtube.com'],
+        ['website_name' => 'SpankBang', 'website_url' => 'https://spankbang.com'],
+        ['website_name' => 'Tnaflix', 'website_url' => 'https://tnaflix.com'],
+        ['website_name' => 'Tube8', 'website_url' => 'https://tube8.com'],
+        ['website_name' => 'xHamster', 'website_url' => 'https://xhamster.com'],
+        ['website_name' => 'XNXX', 'website_url' => 'https://xnxx.com'],
+        ['website_name' => 'XVideos', 'website_url' => 'https://xvideos.com'],
+        ['website_name' => 'YouPorn', 'website_url' => 'https://youporn.com'],
+    ];
+}
+
+// Extract names and domains for display and validation
+$supportedSiteNames = array_column($supportedWebsitesData, 'website_name');
+$supportedDomains = [];
+foreach ($supportedWebsitesData as $site) {
+    $domain = parse_url($site['website_url'], PHP_URL_HOST);
+    if ($domain) {
+        $supportedDomains[] = preg_replace('/^www\./', '', $domain);
+    }
+}
 
 // Convert to comma-separated string for display in tooltip
 $supportedSitesText = implode(', ', $supportedSiteNames);
