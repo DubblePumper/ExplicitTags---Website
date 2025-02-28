@@ -2,6 +2,7 @@
 // Make sure there are no whitespace or newlines before the opening PHP tag
 
 // Buffer output to prevent "headers already sent" errors
+// test url: https://nl.pornhub.com/view_video.php?viewkey=67655e3602f62
 ob_start();
 
 // Include only the configuration files first to avoid output
@@ -183,13 +184,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$error) {
                 
                 // Trigger the background worker process (non-blocking)
                 $rootPath = $_SERVER['DOCUMENT_ROOT'];
-                $cmd = "php {$rootPath}/utils/workers/process_video_queue.php {$videoId} > /dev/null 2>&1 &";
+                
+                // Log the attempt to trigger background processing
+                error_log("Attempting to trigger background process for video ID: $videoId");
                 
                 if (stripos(PHP_OS, 'WIN') === 0) {
-                    // Windows - use start command
-                    pclose(popen("start /B php {$rootPath}\\utils\\workers\\process_video_queue.php {$videoId}", "r"));
+                    // Windows - create a specific command that works with XAMPP/localhost
+                    $workerPath = realpath($rootPath . '/utils/workers/process_video_queue.php');
+                    $phpPath = 'php'; // Assuming PHP is in PATH, otherwise use full path
+                    
+                    // Check if we have the worker script
+                    if (!file_exists($workerPath)) {
+                        // If worker script doesn't exist, try to use the VideoDownloader class directly
+                        error_log("Worker script not found at $workerPath, using VideoDownloader class directly");
+                        
+                        // Include the VideoDownloader class
+                        require_once $rootPath . '/utils/services/VideoDownloader.php';
+                        
+                        // Create VideoDownloader instance
+                        $downloader = new \Utils\Services\VideoDownloader($pdo);
+                        
+                        // Process video directly (will block the request but ensures processing)
+                        $downloader->downloadVideo($videoId, $videoUrl);
+                    } else {
+                        // Use popen with "start /B" to run in background
+                        $cmd = "start /B $phpPath \"$workerPath\" $videoId > NUL 2>&1";
+                        error_log("Executing Windows command: $cmd");
+                        pclose(popen($cmd, "r"));
+                    }
                 } else {
-                    // Linux/Unix - use nohup or background process
+                    // Linux/Unix - use exec with "&" to run in background
+                    $cmd = "php {$rootPath}/utils/workers/process_video_queue.php {$videoId} > /dev/null 2>&1 &";
+                    error_log("Executing Linux command: $cmd");
                     exec($cmd);
                 }
             } else {
@@ -373,11 +399,17 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/include-all.php';
         
         // Initial progress based on current status
         let progress = <?php 
-            if ($processingStatus === 'pending') echo "10";
-            elseif ($processingStatus === 'processing') echo "30";
-            elseif ($processingStatus === 'completed') echo "100";
-            elseif ($processingStatus === 'failed') echo "0";
-            else echo "0";
+            if ($processingStatus === 'pending') {
+                echo "10";
+            } elseif ($processingStatus === 'processing') {
+                echo "30";
+            } elseif ($processingStatus === 'completed') {
+                echo "100";
+            } elseif ($processingStatus === 'failed') {
+                echo "0";
+            } else {
+                echo "0";
+            }
         ?>;
         
         updateProgressBar(progress);
@@ -386,9 +418,10 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/include-all.php';
         let checkInterval = setInterval(checkStatus, 3000);
         
         function checkStatus() {
-            // Fix: Use relative path and current protocol
-            // Always make the request to the same origin to avoid CORS and protocol issues
-            const apiUrl = `/utils/tagVideoThroughUrl/check-processing-status.php?id=${videoId}`;
+            // Use window.location to get the correct protocol (http or https)
+            const protocol = window.location.protocol;
+            const host = window.location.host;
+            const apiUrl = `${protocol}//${host}/utils/tagVideoThroughUrl/check-processing-status.php?id=${videoId}`;
             
             console.log(`Checking status at: ${apiUrl}`);
             
@@ -408,121 +441,54 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/include-all.php';
             })
             .then(data => {
                 console.log("Status check response:", data);
-                if (data.status === 'processing') {
-                    // Increment progress slightly to show movement
-                    if (progress < 70) {
-                        progress += 5;
-                        updateProgressBar(progress);
-                    }
-                    statusMessage.textContent = "AI is analyzing your video...";
-                } 
-                else if (data.status === 'completed') {
-                    progress = 100;
-                    updateProgressBar(progress);
-                    statusMessage.textContent = "Analysis complete!";
-                    clearInterval(checkInterval);
-                    showResults(data.results);
-                } 
-                else if (data.status === 'failed') {
-                    statusMessage.textContent = "Processing failed. Please try again.";
-                    clearInterval(checkInterval);
-                }
-                else {
-                    console.log("Unknown status:", data.status);
-                }
+                handleStatusUpdate(data);
             })
             .catch(error => {
                 console.error('Fetch error:', error);
                 
-                // Docker environment check - special handling for Docker
-                console.log("Attempting to use alternative URL format...");
-                
-                // Try directly with the full URL, removing the protocol part to use the current protocol
-                const currentProtocol = window.location.protocol;
-                const hostname = window.location.hostname;
-                const port = window.location.port ? `:${window.location.port}` : '';
-                
-                // Create URL using the current protocol (http: or https:)
-                const fallbackUrl = `${currentProtocol}//${hostname}${port}/utils/tagVideoThroughUrl/check-processing-status.php?id=${videoId}`;
+                // Try a direct relative path as fallback with current timestamp to avoid caching
+                const timestamp = new Date().getTime();
+                const fallbackUrl = `/utils/tagVideoThroughUrl/check-processing-status.php?id=${videoId}&t=${timestamp}`;
                 
                 console.log(`Trying fallback URL: ${fallbackUrl}`);
                 
-                // Add a delay to avoid immediate retry
-                setTimeout(() => {
-                    fetch(fallbackUrl, {
-                        method: 'GET',
-                        headers: {
-                            'Accept': 'application/json',
-                            'Cache-Control': 'no-cache'
-                        },
-                        credentials: 'same-origin'
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        console.log("Fallback response:", data);
-                        
-                        // Handle the response the same way as the main fetch
-                        if (data.status === 'processing') {
-                            if (progress < 70) {
-                                progress += 5;
-                                updateProgressBar(progress);
-                            }
-                            statusMessage.textContent = "AI is analyzing your video...";
-                        } 
-                        else if (data.status === 'completed') {
-                            progress = 100;
-                            updateProgressBar(progress);
-                            statusMessage.textContent = "Analysis complete!";
-                            clearInterval(checkInterval);
-                            showResults(data.results);
-                        } 
-                        else if (data.status === 'failed') {
-                            statusMessage.textContent = "Processing failed. Please try again.";
-                            clearInterval(checkInterval);
-                        }
-                    })
-                    .catch(innerError => {
-                        console.error("Fallback fetch also failed:", innerError);
-                        
-                        // Special case for Docker: try with fixed HTTP protocol as last resort
-                        const httpFallbackUrl = `http://${hostname}${port}/utils/tagVideoThroughUrl/check-processing-status.php?id=${videoId}`;
-                        console.log(`Trying HTTP fallback URL: ${httpFallbackUrl}`);
-                        
-                        fetch(httpFallbackUrl, {
-                            method: 'GET',
-                            headers: {
-                                'Accept': 'application/json',
-                                'Cache-Control': 'no-cache'
-                            }
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            console.log("HTTP fallback response:", data);
-                            // Process the response as before
-                            if (data && data.status) {
-                                handleStatusUpdate(data);
-                            }
-                        })
-                        .catch(finalError => {
-                            console.error("All fallback attempts failed:", finalError);
-                        });
-                    });
-                }, 1000);
-                
-                // Continue checking but less frequently if there are errors
-                clearInterval(checkInterval);
-                checkInterval = setInterval(checkStatus, 10000); // Longer interval after error
+                fetch(fallbackUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Cache-Control': 'no-cache'
+                    },
+                    credentials: 'same-origin'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Fallback response:", data);
+                    handleStatusUpdate(data);
+                })
+                .catch(finalError => {
+                    console.error("All attempts failed:", finalError);
+                    statusMessage.textContent = "Unable to check status. Please refresh the page.";
+                });
             });
         }
         
         // Helper function to handle status updates from any source
         function handleStatusUpdate(data) {
             if (data.status === 'processing') {
-                if (progress < 70) {
+                if (data.progress) {
+                    // Use actual progress if available
+                    progress = data.progress;
+                } else if (progress < 70) {
                     progress += 5;
-                    updateProgressBar(progress);
                 }
-                statusMessage.textContent = "AI is analyzing your video...";
+                updateProgressBar(progress);
+                
+                // Use the status message from the server if available
+                if (data.message) {
+                    statusMessage.textContent = data.message;
+                } else {
+                    statusMessage.textContent = "AI is analyzing your video...";
+                }
             } 
             else if (data.status === 'completed') {
                 progress = 100;
@@ -532,7 +498,7 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/include-all.php';
                 showResults(data.results);
             } 
             else if (data.status === 'failed') {
-                statusMessage.textContent = "Processing failed. Please try again.";
+                statusMessage.textContent = data.message || "Processing failed. Please try again.";
                 clearInterval(checkInterval);
             }
         }

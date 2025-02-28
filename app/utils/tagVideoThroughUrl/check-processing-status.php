@@ -10,46 +10,152 @@ error_reporting(E_ERROR);
 // Set headers for JSON response
 header('Content-Type: application/json');
 header('Cache-Control: no-cache, no-store, must-revalidate');
+header('Access-Control-Allow-Origin: *'); // Allow from any origin
+header('Access-Control-Allow-Methods: GET, OPTIONS');
 
-// Include database functions
-require_once $_SERVER['DOCUMENT_ROOT'] . '/utils/tagVideoThroughUrl/database-functions.php';
-
-// Get video ID from query string
-$videoId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-
-if (!$videoId) {
-    echo json_encode([
-        'error' => 'Missing video ID',
-        'status' => 'error'
-    ]);
-    exit;
+// Handle preflight requests
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    header('Access-Control-Allow-Headers: Content-Type, Origin');
+    exit(0);
 }
 
-// Get current status from database
-$videoData = getVideoStatus($videoId);
+// Include necessary files
+require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/config.php';
 
-if (!$videoData) {
-    echo json_encode([
-        'error' => 'Video not found',
-        'status' => 'error'
-    ]);
-    exit;
-}
+// For debugging - log that this endpoint was accessed
+error_log('check-processing-status.php accessed with ID: ' . ($_GET['id'] ?? 'none'));
 
-// Prepare response
+// Initialize response
 $response = [
-    'status' => $videoData['processing_status'],
-    'message' => $videoData['status_message'] ?? '',
-    'progress' => (float)($videoData['download_progress'] ?? 0)
+    'status' => 'pending',
+    'progress' => 0,
+    'message' => 'Waiting to start processing',
+    'results' => null
 ];
 
-// Include results if processing is complete
-if ($videoData['processing_status'] === 'completed' && !empty($videoData['result_data'])) {
-    $response['results'] = $videoData['result_data'];
+// Check if ID is provided
+if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
+    http_response_code(400);
+    $response['status'] = 'failed';
+    $response['message'] = 'Invalid video ID';
+    echo json_encode($response);
+    exit;
 }
 
-// Return progress information, add last update time
-$response['last_updated'] = $videoData['updated_at'];
+$videoId = (int)$_GET['id'];
 
-// Encode and output the response
+try {
+    // Create PDO instance
+    $pdo = testDBConnection();
+    
+    if (!$pdo) {
+        throw new Exception('Database connection failed');
+    }
+    
+    // Query the processing status
+    $stmt = $pdo->prepare("
+        SELECT processing_status, download_progress, status_message, processed_tags, processed_performers
+        FROM processed_videos 
+        WHERE id = :id
+    ");
+    
+    $stmt->execute([':id' => $videoId]);
+    $videoData = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if (!$videoData) {
+        throw new Exception('Video not found');
+    }
+    
+    // Set the response based on the database data
+    $response['status'] = $videoData['processing_status'];
+    
+    if ($videoData['download_progress'] !== null) {
+        $response['progress'] = (int)$videoData['download_progress'];
+    } else {
+        // If no explicit progress, estimate based on status
+        switch ($videoData['processing_status']) {
+            case 'pending':
+                $response['progress'] = 10;
+                break;
+            case 'processing':
+                $response['progress'] = 50; // Default mid-processing
+                break;
+            case 'completed':
+                $response['progress'] = 100;
+                break;
+            case 'failed':
+                $response['progress'] = 0;
+                break;
+            default:
+                $response['progress'] = 0;
+        }
+    }
+    
+    // Include status message if available
+    if (!empty($videoData['status_message'])) {
+        $response['message'] = $videoData['status_message'];
+    } else {
+        // Default messages based on status
+        switch ($videoData['processing_status']) {
+            case 'pending':
+                $response['message'] = 'Waiting to start processing';
+                break;
+            case 'processing':
+                $response['message'] = 'Processing your video';
+                break;
+            case 'completed':
+                $response['message'] = 'Processing complete';
+                break;
+            case 'failed':
+                $response['message'] = 'Processing failed';
+                break;
+            default:
+                $response['message'] = 'Unknown status';
+        }
+    }
+    
+    // Include results if completed
+    if ($videoData['processing_status'] === 'completed') {
+        $results = [
+            'performers' => [],
+            'tags' => []
+        ];
+        
+        // Process performers if available
+        if (!empty($videoData['processed_performers'])) {
+            $performersData = json_decode($videoData['processed_performers'], true);
+            if (is_array($performersData)) {
+                $results['performers'] = $performersData;
+            }
+        }
+        
+        // Process tags if available
+        if (!empty($videoData['processed_tags'])) {
+            $tagsData = json_decode($videoData['processed_tags'], true);
+            if (is_array($tagsData)) {
+                $results['tags'] = $tagsData;
+            }
+        }
+        
+        $response['results'] = $results;
+    }
+    
+    // For debugging - log the response
+    error_log('Response for video ID ' . $videoId . ': ' . json_encode($response));
+    
+} catch (PDOException $e) {
+    http_response_code(500);
+    $response['status'] = 'failed';
+    $response['message'] = 'Database error: ' . $e->getMessage();
+    error_log('PDO Error in check-processing-status: ' . $e->getMessage());
+} catch (Exception $e) {
+    http_response_code(404);
+    $response['status'] = 'failed';
+    $response['message'] = $e->getMessage();
+    error_log('Error in check-processing-status: ' . $e->getMessage());
+}
+
+// Return the JSON response
 echo json_encode($response);
+exit;
+?>

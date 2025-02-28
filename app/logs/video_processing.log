@@ -1,0 +1,4 @@
+[2025-02-28 12:03:35] Video processing worker started with arguments: /var/www/html/utils/workers/process_video_queue.php, 46
+[2025-02-28 12:03:35] Starting processing for video ID: 46
+[2025-02-28 12:08:35] Video processing worker started with arguments: /var/www/html/utils/workers/process_video_queue.php, 47
+[2025-02-28 12:08:35] Starting processing for video ID: 47
