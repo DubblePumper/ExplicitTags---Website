@@ -169,54 +169,87 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$error) {
             $videoId = $pdo->lastInsertId();
             $success = true;
             
-            // If URL submission, trigger download asynchronously
+            // If URL submission, process it immediately instead of queuing
             if ($sourceType === 'url') {
                 // Update status to "processing" for URLs
                 $updateStmt = $pdo->prepare("
                     UPDATE processed_videos 
                     SET processing_status = 'processing',
-                        status_message = 'Queued for download'
+                        status_message = 'Starting download...'
                     WHERE id = :id
                 ");
                 
                 $updateStmt->execute([':id' => $videoId]);
                 $processingStatus = 'processing';
                 
-                // Trigger the background worker process (non-blocking)
+                // Load the VideoDownloader class
                 $rootPath = $_SERVER['DOCUMENT_ROOT'];
+                require_once $rootPath . '/utils/services/VideoDownloader.php';
                 
-                // Log the attempt to trigger background processing
-                error_log("Attempting to trigger background process for video ID: $videoId");
-                
-                if (stripos(PHP_OS, 'WIN') === 0) {
-                    // Windows - create a specific command that works with XAMPP/localhost
-                    $workerPath = realpath($rootPath . '/utils/workers/process_video_queue.php');
-                    $phpPath = 'php'; // Assuming PHP is in PATH, otherwise use full path
+                // Create VideoDownloader instance and download the video
+                try {
+                    $downloader = new \Utils\Services\VideoDownloader($pdo);
                     
-                    // Check if we have the worker script
-                    if (!file_exists($workerPath)) {
-                        // If worker script doesn't exist, try to use the VideoDownloader class directly
-                        error_log("Worker script not found at $workerPath, using VideoDownloader class directly");
-                        
-                        // Include the VideoDownloader class
-                        require_once $rootPath . '/utils/services/VideoDownloader.php';
-                        
-                        // Create VideoDownloader instance
-                        $downloader = new \Utils\Services\VideoDownloader($pdo);
-                        
-                        // Process video directly (will block the request but ensures processing)
-                        $downloader->downloadVideo($videoId, $videoUrl);
-                    } else {
-                        // Use popen with "start /B" to run in background
-                        $cmd = "start /B $phpPath \"$workerPath\" $videoId > NUL 2>&1";
-                        error_log("Executing Windows command: $cmd");
-                        pclose(popen($cmd, "r"));
+                    // Perform the download (but don't wait for the result before redirecting)
+                    // This will start the download process
+                    error_log("Starting direct download for video ID: $videoId");
+                    
+                    // Start session for storing download progress
+                    if (session_status() === PHP_SESSION_NONE) {
+                        session_start();
                     }
-                } else {
-                    // Linux/Unix - use exec with "&" to run in background
-                    $cmd = "php {$rootPath}/utils/workers/process_video_queue.php {$videoId} > /dev/null 2>&1 &";
-                    error_log("Executing Linux command: $cmd");
-                    exec($cmd);
+                    $_SESSION['download_video_id'] = $videoId;
+                    
+                    // Redirect early to show the progress page
+                    if ($returnUrl && (strpos($returnUrl, '/') === 0)) {
+                        // Add the ID as a parameter to the return URL
+                        $separator = strpos($returnUrl, '?') !== false ? '&' : '?';
+                        
+                        // Clean output buffer before sending headers
+                        ob_clean();
+                        
+                        // Perform the redirect
+                        header("Location: {$returnUrl}{$separator}id={$videoId}");
+                        
+                        // After redirect, continue with download in the background
+                        ob_start();
+                        // Send headers to prevent client disconnection
+                        header('Connection: close');
+                        header('Content-Length: ' . ob_get_length());
+                        ob_end_flush();
+                        flush();
+                        
+                        // Now continue with the download process
+                        if (function_exists('fastcgi_finish_request')) {
+                            fastcgi_finish_request();
+                        }
+                        
+                        // Now perform the download
+                        $result = $downloader->downloadVideo($videoId, $videoUrl);
+                        error_log("Download completed with status: " . $result['status']);
+                        
+                        exit;
+                    } else {
+                        // If no redirect, do the download synchronously
+                        $result = $downloader->downloadVideo($videoId, $videoUrl);
+                        error_log("Download completed with status: " . $result['status']);
+                    }
+                    
+                } catch (Exception $e) {
+                    error_log("Error in video download: " . $e->getMessage());
+                    
+                    // Update status to failed
+                    $failStmt = $pdo->prepare("
+                        UPDATE processed_videos 
+                        SET processing_status = 'failed',
+                            status_message = :message
+                        WHERE id = :id
+                    ");
+                    
+                    $failStmt->execute([
+                        ':id' => $videoId,
+                        ':message' => 'Download error: ' . $e->getMessage()
+                    ]);
                 }
             } else {
                 // For direct uploads, just update status to processing
