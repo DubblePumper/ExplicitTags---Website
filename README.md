@@ -1,7 +1,9 @@
 # AI_Analyser_Website
 website for my ai porn analyser
 
-# Feel free to help me with my website.
+## Feel free to help me with my website.
+
+# File structure of project
 ```text
 AI_Analyser_Website/
 ├── .gitignore
@@ -50,7 +52,6 @@ AI_Analyser_Website/
 │   ├── pages/
 │   │   └── experience.php
 │   ├── performers_details_data.json
-│   ├── src/
 │   ├── tag.php
 │   ├── uploads/
 │   │   ├── temp/
