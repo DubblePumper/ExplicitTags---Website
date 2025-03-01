@@ -10,60 +10,67 @@ AI_Analyser_Website/
 ├── README.md
 ├── LICENSE
 ├── docker-compose.yaml
-├── app/
-│   ├── .htaccess
-│   ├── Dockerfile
-│   ├── api/
-│   │   ├── performer_detail_sse.php
-│   │   └── performers_sse.php
-│   ├── assets/
-│   │   ├── 3dmodels/
-│   │   ├── css/
-│   │   ├── images/
-│   │   ├── js/
-│   │   │   ├── extension/
-│   │   │   │   └── messageListener.js
-│   │   │   └── tagPage/
-│   │   │       └── functions.js
-│   │   └── vendor/
-│   │       ├── composer/
-│   │       ├── norkunas/youtube-dl-php/
-│   │       ├── symfony/
-│   │       │   ├── filesystem/
-│   │       │   │   ├── Filesystem.php
-│   │       │   │   └── Path.php
-│   │       │   └── process/
-│   │       │       ├── ExecutableFinder.php
-│   │       │       └── Process.php
-│   │       └── yt-dlp/
-│   ├── composer.json
-│   ├── composer.lock
-│   ├── includes/
-│   │   ├── config.php
-│   │   ├── globals.php
-│   │   ├── head.php
-│   │   ├── include-all.php
-│   │   ├── minimal-header.php
-│   │   └── scripts.php
-│   ├── index.php
-│   ├── logs/
-│   │   ├── video_downloader.log
-│   │   └── video_processing.log
-│   ├── pages/
-│   │   └── experience.php
-│   ├── performers_details_data.json
-│   ├── tag.php
-│   ├── uploads/
-│   │   ├── temp/
-│   │   └── videos/
-│   │       └── debug_html_67c1b5a10fa9e.txt
-│   └── utils/
-│       ├── services/
-│       │   └── VideoDownloader.php
-│       ├── tagVideoThroughUrl/
-│       │   ├── check-processing-status.php
-│       │   ├── database-functions.php
-│       │   └── process-video.php
-│       └── workers/
-│           └── process_video_queue.php
+└── app/
+    ├── composer.json
+    ├── composer.lock
+    ├── docker/
+    │   └── Dockerfile
+    ├── vendor/                # Composer dependencies
+    ├── config/
+    │   ├── config.php
+    │   └── globals.php
+    ├── public/
+    │   ├── .htaccess
+    │   ├── index.php
+    │   ├── assets/
+    │   │   ├── css/
+    │   │   ├── js/
+    │   │   │   ├── experiencePage/
+    │   │   │   │   ├── pagination.js
+    │   │   │   │   ├── question2.js
+    │   │   │   │   ├── question3.js
+    │   │   │   │   └── question4.js
+    │   │   │   ├── modals/
+    │   │   │   │   └── performerModal.js
+    │   │   │   ├── extension/
+    │   │   │   │   └── messageListener.js
+    │   │   │   ├── tagPage/
+    │   │   │   │   └── functions.js
+    │   │   │   └── utils/
+    │   │   │       └── cache.js
+    │   │   ├── images/
+    │   │   │   ├── icons/
+    │   │   │   └── website_images/
+    │   │   └── 3dmodels/
+    │   ├── api/
+    │   │   ├── performer_detail_sse.php
+    │   │   └── performers_sse.php
+    │   └── pages/              # Publieke pagina’s voor gebruikers
+    │       ├── experience.php
+    │       └── tag.php
+    ├── src/                    # Interne applicatielogica (controllers, views, etc.)
+    │   ├── Controller/
+    │   ├── Includes/
+    │   │   ├── head.php
+    │   │   ├── include-all.php
+    │   │   ├── minimal-header.php
+    │   │   └── scripts.php
+    │   ├── Utils/
+    │   │   ├── VideoDownloader.php
+    │   │   ├── tagVideoThroughUrl/
+    │   │   │   ├── check-processing-status.php
+    │   │   │   ├── database-functions.php
+    │   │   │   └── process-video.php
+    │   │   └── Workers/
+    │   │       └── process_video_queue.php
+    │   └── Database/
+    │       └── database_structure.sql
+    └── storage/                # Niet-publieke data (uploads, logs)
+        ├── uploads/
+        │   ├── temp/
+        │   └── videos/
+        │       └── debug_html_67c1b5a10fa9e.txt
+        └── logs/
+            ├── video_downloader.log
+            └── video_processing.log
 ```

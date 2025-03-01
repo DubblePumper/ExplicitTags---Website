@@ -1,22 +1,22 @@
 {
-    "config": {
-        "vendor-dir": "assets/vendor"
-    },
-    "name": "sander/ai_analyser_website",
-    "autoload": {
-        "psr-4": {
-            "Sander\\AiAnalyserWebsite\\": "./",
-            "Utils\\Services\\": "utils/services/"
-        }
-    },
-    "authors": [
-        {
-            "name": "DubblePumper",
-            "email": "sander.truyts@gmail.com"
-        }
-    ],
-    "require": {
-        "norkunas/youtube-dl-php": "^2.10",
-        "symfony/process": "^7.2"
+  "config": {
+    "vendor-dir": "/vendor"
+  },
+  "name": "sander/ai_analyser_website",
+  "autoload": {
+    "psr-4": {
+      "Sander\\AiAnalyserWebsite\\": "src/",
+      "Utils\\Services\\": "src/Utils/Services/"
     }
+  },
+  "authors": [
+    {
+      "name": "DubblePumper",
+      "email": "sander.truyts@gmail.com"
+    }
+  ],
+  "require": {
+    "norkunas/youtube-dl-php": "^2.10",
+    "symfony/process": "^7.2"
+  }
 }
