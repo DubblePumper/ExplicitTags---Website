@@ -1,0 +1,34 @@
+[2025-03-01 15:25:09] [VideoDownloader] VideoDownloader initialized. Upload directory: /var/www/html/public/uploads/videos/
+[2025-03-01 15:25:09] [VideoDownloader] Using yt-dlp binary at: yt-dlp
+[2025-03-01 15:25:09] [VideoDownloader] Updated status for video ID 57 to 'processing' with message 'Initializing download...'. Result: success
+[2025-03-01 15:25:09] [VideoDownloader] Starting download for video ID 57 from URL: https://nl.pornhub.com/view_video.php?viewkey=ph62aab0917d335
+[2025-03-01 15:25:09] [VideoDownloader] Target file path: /var/www/html/public/uploads/videos/video_67c326d5d1e5e.mp4
+[2025-03-01 15:25:09] [VideoDownloader] Updated status for video ID 57 to 'processing' with message 'Preparing to download video...'. Result: success
+[2025-03-01 15:25:09] [VideoDownloader] Attempting direct cURL download...
+[2025-03-01 15:25:10] [VideoDownloader] Updated status for video ID 57 to 'processing' with message 'Downloading video via cURL...'. Result: success
+[2025-03-01 15:25:10] [VideoDownloader] Starting cURL download from URL: https://nl.pornhub.com/view_video.php?viewkey=ph62aab0917d335
+[2025-03-01 15:25:10] [VideoDownloader] Attempting to extract video URL from: https://nl.pornhub.com/view_video.php?viewkey=ph62aab0917d335
+[2025-03-01 15:25:14] [VideoDownloader] Saved debug HTML to: /var/www/html/public/uploads/videos/debug_html_67c326da8b2e9.txt
+[2025-03-01 15:25:14] [VideoDownloader] Extracted direct video URL: https://kv-h.phncdn.com/hls/videos/202206/16/410017931/221002_1634_1080P_4000K_410017931.mp4/master.m3u8?hdnea=st=1740842714~exp=1740846314~hdl=-1~hmac=5418a71b5861c003764131c079cbe57ea94051d9
+[2025-03-01 15:25:14] [VideoDownloader] Handling HLS (m3u8) download from: https://kv-h.phncdn.com/hls/videos/202206/16/410017931/221002_1634_1080P_4000K_410017931.mp4/master.m3u8?hdnea=st=1740842714~exp=1740846314~hdl=-1~hmac=5418a71b5861c003764131c079cbe57ea94051d9
+[2025-03-01 15:25:14] [VideoDownloader] Executing yt-dlp command for HLS download: yt-dlp --no-check-certificate --format "best[ext=mp4]/best" --no-playlist --output "'/var/www/html/public/uploads/videos/video_67c326d5d1e5e.mp4'" --force-overwrites "file:'/var/www/html/public/uploads/videos/url_67c326daf290d.txt'"
+[2025-03-01 15:25:15] [VideoDownloader] HLS download command output: sh: 1: yt-dlp: not found
+[2025-03-01 15:25:15] [VideoDownloader] HLS download return value: 127
+[2025-03-01 15:25:15] [VideoDownloader] Retrying with direct URL: yt-dlp --no-check-certificate --format "best[ext=mp4]/best" --no-playlist --output "'/var/www/html/public/uploads/videos/video_67c326d5d1e5e.mp4'" --force-overwrites "'https://kv-h.phncdn.com/hls/videos/202206/16/410017931/221002_1634_1080P_4000K_410017931.mp4/master.m3u8?hdnea=st=1740842714~exp=1740846314~hdl=-1~hmac=5418a71b5861c003764131c079cbe57ea94051d9'"
+[2025-03-01 15:25:15] [VideoDownloader] Second attempt output: sh: 1: yt-dlp: not found
+[2025-03-01 15:25:15] [VideoDownloader] Second attempt return value: 127
+[2025-03-01 15:25:15] [VideoDownloader] yt-dlp failed, will try pure PHP approach
+[2025-03-01 15:25:15] [VideoDownloader] Falling back to pure PHP HLS download...
+[2025-03-01 15:25:15] [VideoDownloader] Parsing m3u8 content...
+[2025-03-01 15:25:15] [VideoDownloader] Found 1 segments in m3u8 file
+[2025-03-01 15:25:15] [VideoDownloader] Found 1 video segments to download
+[2025-03-01 15:25:15] [VideoDownloader] Starting to download 1 segments
+[2025-03-01 15:25:15] [VideoDownloader] Will report progress every 1 segments
+[2025-03-01 15:25:15] [VideoDownloader] Downloaded segment 0/1 (100%)
+[2025-03-01 15:25:15] [VideoDownloader] Successfully downloaded 1 out of 1 segments
+[2025-03-01 15:25:15] [VideoDownloader] Total downloaded size: 14668 bytes
+[2025-03-01 15:25:15] [VideoDownloader] cURL download successful: Downloaded and concatenated 1 segments, total size: 14668 bytes
+[2025-03-01 15:25:15] [VideoDownloader] Updated video path for ID 57 to '/uploads/videos/video_67c326d5d1e5e.mp4'. Result: success
+[2025-03-01 15:25:15] [VideoDownloader] Updated progress for video ID 57 to 100%. Result: success
+[2025-03-01 15:25:15] [VideoDownloader] Direct download successful: {"status":"success","message":"Video downloaded successfully via cURL","path":"\/uploads\/videos\/video_67c326d5d1e5e.mp4"}
+[2025-03-01 15:25:15] [VideoDownloader] Added dummy analysis results for video ID 57. Result: success
