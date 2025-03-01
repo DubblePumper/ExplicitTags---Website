@@ -4,3 +4,4 @@ app/includes/config.php
 app/config/config.php
 app/storage
 app/storage/*
+app/storage/
