@@ -1,13 +1,17 @@
 {
   "config": {
-    "vendor-dir": "/vendor"
+    "vendor-dir": "vendor"
   },
   "name": "sander/ai_analyser_website",
   "autoload": {
     "psr-4": {
       "Sander\\AiAnalyserWebsite\\": "src/",
-      "Utils\\Services\\": "src/Utils/Services/"
-    }
+      "Utils\\Services\\": "src/Utils/Services/",
+      "Utils\\": "src/Utils/"
+    },
+    "files": [
+      "src/Utils/tagVideoThroughUrl/database-functions.php"
+    ]
   },
   "authors": [
     {

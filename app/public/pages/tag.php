@@ -68,7 +68,7 @@ if ($redirect && $videoId) {
     <main class="min-h-screen">
         <div class="container mx-auto px-4 py-4 md:py-8 max-w-3xl">
             <div id="upload" class="bg-gray-900/50 p-4 md:p-6 rounded-lg shadow-lg mt-6 md:mt-10 bg-clip-padding backdrop-filter backdrop-blur-sm border border-primairy" data-aos="fade-up" data-aos-duration="1000">
-                <!-- Update the form action to include the current path for redirection -->
+                <!-- Ensure the form action matches what's defined in .htaccess -->
                 <form id="videoForm" action="/utils/process-video" method="post" enctype="multipart/form-data" class="space-y-6 md:space-y-8">
                     <input type="hidden" name="return_url" value="/tag?redirect=true">
                     <div class="tabs flex border-b border-gray-600 mb-4">

@@ -2,10 +2,29 @@
 
 namespace Utils\Services;
 
+use Exception;
+use PDO;
 use YoutubeDl\Options;
 use YoutubeDl\YoutubeDl;
+use Symfony\Component\Process\Process;
 use Symfony\Component\Process\Exception\ProcessFailedException;
-use Exception;
+
+// Define constants if not already defined
+if (!defined('LOG_DIR')) {
+    define('LOG_DIR', dirname($_SERVER['DOCUMENT_ROOT'], 1) . '/storage/logs/');
+}
+
+if (!defined('UPLOADS_DIR')) {
+    define('UPLOADS_DIR', $_SERVER['DOCUMENT_ROOT'] . '/storage/uploads/videos/');
+}
+
+if (!defined('VENDOR_DIR')) {
+    define('VENDOR_DIR', $_SERVER['DOCUMENT_ROOT'] . '/vendor/');
+}
+
+if (!defined('MAX_VIDEO_SIZE')) {
+    define('MAX_VIDEO_SIZE', '500M'); // Maximum video file size to download
+}
 
 class VideoDownloader
 {
@@ -13,26 +32,38 @@ class VideoDownloader
     private $uploadDir;
     private $pdo;
     private $debug = true; // Enable debugging
+    private $ytDlpPath;
+    private $logFile;
 
     public function __construct($pdo)
     {
-        // Ensure the upload directory exists
-        $this->uploadDir = $_SERVER['DOCUMENT_ROOT'] . '/uploads/videos/';
+        // Set the upload directory from constants
+        $this->uploadDir = UPLOADS_DIR;
         if (!file_exists($this->uploadDir)) {
             mkdir($this->uploadDir, 0755, true);
         }
 
         $this->pdo = $pdo;
+        $this->logFile = LOG_DIR . 'video_downloader.log';
+        
+        // Ensure log directory exists
+        if (!file_exists(LOG_DIR)) {
+            mkdir(LOG_DIR, 0755, true);
+        }
         
         $this->log("VideoDownloader initialized. Upload directory: " . $this->uploadDir);
 
-        // Create YoutubeDl instance with yt-dlp binary
-        $this->youtubeDl = new YoutubeDl();
+        // Find and set up yt-dlp binary
+        $this->ytDlpPath = $this->findYtDlpBinary();
+        $this->log("Using yt-dlp binary at: " . $this->ytDlpPath);
         
-        // Use yt-dlp instead of youtube-dl
-        $ytdlpPath = $this->findYtDlpBinary();
-        $this->log("Using yt-dlp binary at: " . $ytdlpPath);
-        $this->youtubeDl->setBinPath($ytdlpPath);
+        // Create YoutubeDl instance with yt-dlp binary if available
+        try {
+            $this->youtubeDl = new YoutubeDl();
+            $this->youtubeDl->setBinPath($this->ytDlpPath);
+        } catch (Exception $e) {
+            $this->log("Warning: Could not initialize YoutubeDl library: " . $e->getMessage());
+        }
     }
     
     /**
@@ -45,13 +76,8 @@ class VideoDownloader
             $logMessage = "[$timestamp] [VideoDownloader] $message";
             
             // Log to file
-            $logDir = $_SERVER['DOCUMENT_ROOT'] . '/logs/';
-            if (!file_exists($logDir)) {
-                mkdir($logDir, 0777, true);
-            }
-            
             file_put_contents(
-                $logDir . 'video_downloader.log',
+                $this->logFile,
                 $logMessage . PHP_EOL,
                 FILE_APPEND
             );
@@ -70,7 +96,7 @@ class VideoDownloader
     private function findYtDlpBinary()
     {
         // First check the vendor directory (PREFERRED LOCATION)
-        $vendorPath = $_SERVER['DOCUMENT_ROOT'] . '/assets/vendor/yt-dlp/yt-dlp';
+        $vendorPath = VENDOR_DIR . 'yt-dlp/yt-dlp';
         if (stripos(PHP_OS, 'WIN') !== false) {
             $vendorPath .= '.exe';
         }
@@ -84,8 +110,8 @@ class VideoDownloader
         // Search in common locations
         $possiblePaths = [
             // Check all variations of vendor paths
-            $_SERVER['DOCUMENT_ROOT'] . '/assets/vendor/yt-dlp',
-            $_SERVER['DOCUMENT_ROOT'] . '/assets/vendor/bin/yt-dlp',
+            VENDOR_DIR . 'yt-dlp',
+            VENDOR_DIR . 'bin/yt-dlp',
             $_SERVER['DOCUMENT_ROOT'] . '/assets/bin/yt-dlp',
             $_SERVER['DOCUMENT_ROOT'] . '/bin/yt-dlp',
             $_SERVER['DOCUMENT_ROOT'] . '/vendor/bin/yt-dlp',
@@ -95,14 +121,14 @@ class VideoDownloader
             'yt-dlp.exe' // Windows executable
         ];
         
-        // Add .exe version to all paths
-        $windowsPaths = [];
-        foreach ($possiblePaths as $path) {
-            if (substr($path, -4) !== '.exe') {
-                $windowsPaths[] = $path . '.exe';
+        // Add .exe version to all paths for Windows
+        if (stripos(PHP_OS, 'WIN') !== false) {
+            foreach ($possiblePaths as $path) {
+                if (substr($path, -4) !== '.exe') {
+                    $possiblePaths[] = $path . '.exe';
+                }
             }
         }
-        $possiblePaths = array_merge($possiblePaths, $windowsPaths);
         
         foreach ($possiblePaths as $path) {
             if ($path === 'yt-dlp' || $path === 'yt-dlp.exe' || file_exists($path)) {
@@ -119,7 +145,7 @@ class VideoDownloader
                 $this->ensureExecutable($downloadedPath);
                 return $downloadedPath;
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->log("Failed to download yt-dlp: " . $e->getMessage());
         }
         
@@ -136,12 +162,13 @@ class VideoDownloader
     private function isPython3Available()
     {
         try {
+            // Check for python3 command
             $cmd = "python3 --version 2>&1";
             $output = shell_exec($cmd);
             $this->log("Python3 check output: " . $output);
             
             if ($output && strpos($output, 'Python 3') !== false) {
-                $this->log("Python 3 is available");
+                $this->log("Python 3 is available via python3 command");
                 return true;
             }
             
@@ -155,9 +182,21 @@ class VideoDownloader
                 return true;
             }
             
+            // Try 'py' command (Windows Python launcher)
+            if (stripos(PHP_OS, 'WIN') !== false) {
+                $cmd = "py -3 --version 2>&1";
+                $output = shell_exec($cmd);
+                $this->log("Py launcher check output: " . $output);
+                
+                if ($output && strpos($output, 'Python 3') !== false) {
+                    $this->log("Python 3 is available via py launcher");
+                    return true;
+                }
+            }
+            
             $this->log("Python 3 is not available on this system");
             return false;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->log("Error checking Python: " . $e->getMessage());
             return false;
         }
@@ -168,7 +207,7 @@ class VideoDownloader
      */
     private function downloadYtDlp()
     {
-        $binDir = $_SERVER['DOCUMENT_ROOT'] . '/bin/';
+        $binDir = VENDOR_DIR . 'yt-dlp/';
         if (!file_exists($binDir)) {
             mkdir($binDir, 0755, true);
         }
@@ -187,11 +226,11 @@ class VideoDownloader
         // Download the file
         $fileContent = @file_get_contents($sourceUrl);
         if ($fileContent === false) {
-            throw new \Exception("Failed to download yt-dlp");
+            throw new Exception("Failed to download yt-dlp");
         }
         
         if (file_put_contents($targetPath, $fileContent) === false) {
-            throw new \Exception("Failed to save yt-dlp to {$targetPath}");
+            throw new Exception("Failed to save yt-dlp to {$targetPath}");
         }
         
         // Make executable on Unix systems
@@ -221,23 +260,43 @@ class VideoDownloader
             $filePath = $this->uploadDir . $fileName;
             $this->log("Target file path: {$filePath}");
             
-            // Try direct download with yt-dlp command first
-            // Skip Python check - we'll try to use the binary directly regardless of Python
+            // Update status to preparing
             $this->updateStatus($videoId, 'processing', 'Preparing to download video...');
             
-            $directResult = $this->directDownload($videoId, $url, $fileName);
-            if ($directResult['status'] === 'success') {
-                $this->log("Direct download successful: " . json_encode($directResult));
+            // Check if Python is available for yt-dlp
+            $pythonAvailable = $this->isPython3Available();
+            
+            // Try direct cURL download first for all sites - most reliable method
+            $curlResult = $this->attemptCurlDownload($videoId, $url, $fileName);
+            if ($curlResult['status'] === 'success') {
+                $this->log("Direct download successful: " . json_encode($curlResult));
                 
-                // After successful download, add dummy analysis results for testing
+                // Add dummy analysis results for testing
                 $this->addDummyAnalysisResults($videoId);
                 
-                return $directResult;
-            } else {
-                $this->log("Direct download failed: " . $directResult['message']);
+                return $curlResult;
             }
             
-            // If we get here, direct download failed, so create a simple file for testing
+            // If Python is available, try yt-dlp next
+            if ($pythonAvailable) {
+                $this->log("Attempting download with yt-dlp");
+                $directResult = $this->directDownload($videoId, $url, $fileName);
+                if ($directResult['status'] === 'success') {
+                    $this->log("yt-dlp download successful: " . json_encode($directResult));
+                    
+                    // Add dummy analysis results for testing
+                    $this->addDummyAnalysisResults($videoId);
+                    
+                    return $directResult;
+                } else {
+                    $this->log("yt-dlp download failed: " . $directResult['message']);
+                }
+            } else {
+                $this->log("Python 3 is not available, skipping direct download");
+                $this->updateStatus($videoId, 'processing', 'Python 3 not available, using fallback...');
+            }
+            
+            // As a last resort, create a test file
             $this->log("Creating test file since download failed");
             $this->createTestVideoFile($videoId, $fileName);
             
@@ -245,7 +304,13 @@ class VideoDownloader
             $relativePath = '/uploads/videos/' . $fileName;
             $this->updateVideoPath($videoId, $relativePath);
             $this->updateProgress($videoId, 100);
-            $this->updateStatus($videoId, 'completed', 'Download complete (test file created)');
+            
+            // Update status based on why we're using the test file
+            if (!$pythonAvailable) {
+                $this->updateStatus($videoId, 'completed', 'Download skipped (Python 3 not available)');
+            } else {
+                $this->updateStatus($videoId, 'completed', 'Download complete (test file created)');
+            }
             
             // Add dummy analysis results
             $this->addDummyAnalysisResults($videoId);
@@ -275,6 +340,40 @@ class VideoDownloader
             return [
                 'status' => 'error',
                 'message' => $errorMsg
+            ];
+        }
+    }
+    
+    /**
+     * Attempt download using cURL
+     */
+    private function attemptCurlDownload($videoId, $url, $fileName) 
+    {
+        $this->log("Attempting direct cURL download...");
+        $this->updateStatus($videoId, 'processing', 'Downloading video via cURL...');
+        
+        $outputPath = $this->uploadDir . $fileName;
+        $result = $this->curlDownload($url, $outputPath);
+        
+        if ($result['success']) {
+            $this->log("cURL download successful: {$result['message']}");
+            
+            // Update the database with the downloaded file path
+            $relativePath = '/uploads/videos/' . $fileName;
+            $this->updateVideoPath($videoId, $relativePath);
+            $this->updateProgress($videoId, 100);
+            $this->updateStatus($videoId, 'completed', 'Download complete via cURL');
+            
+            return [
+                'status' => 'success',
+                'message' => 'Video downloaded successfully via cURL',
+                'path' => $relativePath
+            ];
+        } else {
+            $this->log("cURL download failed: {$result['message']}");
+            return [
+                'status' => 'error',
+                'message' => $result['message']
             ];
         }
     }
@@ -338,7 +437,7 @@ class VideoDownloader
             $this->log("Added dummy analysis results for video ID {$videoId}. Result: " . ($result ? 'success' : 'failed'));
             
             return $result;
-        } catch (\PDOException $e) {
+        } catch (Exception $e) {
             $this->log("Database error when adding dummy results: " . $e->getMessage());
             return false;
         }
@@ -351,39 +450,14 @@ class VideoDownloader
     {
         try {
             $outputPath = $this->uploadDir . $fileName;
-            
-            // First try using PHP's cURL extension directly
-            // This doesn't require Python or external tools
-            if (function_exists('curl_init')) {
-                $this->log("Attempting direct cURL download...");
-                $this->updateStatus($videoId, 'processing', 'Downloading video via cURL...');
-                
-                $result = $this->curlDownload($url, $outputPath);
-                if ($result['success']) {
-                    $this->log("cURL download successful: {$result['message']}");
-                    
-                    // Update the database with the downloaded file path
-                    $relativePath = '/uploads/videos/' . $fileName;
-                    $this->updateVideoPath($videoId, $relativePath);
-                    $this->updateProgress($videoId, 100);
-                    
-                    return [
-                        'status' => 'success',
-                        'message' => 'Video downloaded successfully via cURL',
-                        'path' => $relativePath
-                    ];
-                } else {
-                    $this->log("cURL download failed: {$result['message']}");
-                }
-            }
-            
-            // If cURL fails or isn't available, try with yt-dlp
             $ytdlpPath = $this->findYtDlpBinary();
+            $this->ensureExecutable($ytdlpPath);
             
             // Build the command 
             $cmd = sprintf(
-                '%s --format "best[ext=mp4]/best" --max-filesize 500M --output "%s" "%s" --no-playlist', 
+                '%s --format "best[ext=mp4]/best" --max-filesize %s --output "%s" "%s" --no-playlist', 
                 escapeshellcmd($ytdlpPath),
+                escapeshellarg(MAX_VIDEO_SIZE),
                 escapeshellarg($outputPath),
                 escapeshellarg($url)
             );
@@ -401,12 +475,12 @@ class VideoDownloader
             $this->log("Return value: {$returnVal}");
             
             if ($returnVal !== 0) {
-                throw new \Exception("Command failed with return code {$returnVal}: {$outputStr}");
+                throw new Exception("Command failed with return code {$returnVal}: {$outputStr}");
             }
             
             // Check if file was created
             if (!file_exists($outputPath)) {
-                throw new \Exception("File not created after download command");
+                throw new Exception("File not created after download command");
             }
             
             $fileSize = filesize($outputPath);
@@ -415,7 +489,7 @@ class VideoDownloader
             if ($fileSize < 1000) { // If file is too small, it might be an error message
                 $content = file_get_contents($outputPath);
                 if (stripos($content, 'error') !== false) {
-                    throw new \Exception("Download produced error file: {$content}");
+                    throw new Exception("Download produced error file: {$content}");
                 }
             }
             
@@ -423,6 +497,7 @@ class VideoDownloader
             $relativePath = '/uploads/videos/' . $fileName;
             $this->updateVideoPath($videoId, $relativePath);
             $this->updateProgress($videoId, 100);
+            $this->updateStatus($videoId, 'completed', 'Download complete');
             
             return [
                 'status' => 'success',
@@ -430,7 +505,7 @@ class VideoDownloader
                 'path' => $relativePath
             ];
             
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->log("Direct download failed: " . $e->getMessage());
             return [
                 'status' => 'error',
@@ -449,14 +524,14 @@ class VideoDownloader
         
         $ch = curl_init();
         
-        // Try to determine if we need special headers for this site
+        // Common headers for adult sites
         $headers = [
             'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
             'Accept: */*',
             'Accept-Language: en-US,en;q=0.5',
             'DNT: 1',
             'Connection: keep-alive',
-            'Referer: https://www.pornhub.com/'
+            'Referer: https://www.google.com/'
         ];
         
         // First we need to extract the actual video URL from the page
@@ -510,8 +585,24 @@ class VideoDownloader
         $this->log("cURL download complete: Status {$httpCode}, Size: {$filesize} bytes, Type: {$contentType}");
         
         // If we got an m3u8 file or tiny file, we need a different approach
-        if ($filesize < 10240 && (stripos($contentType, 'm3u8') !== false || stripos($url, '.m3u8') !== false)) {
-            return $this->handleHlsDownload($url, $outputPath);
+        if (($filesize < 10240 && (stripos($contentType, 'm3u8') !== false || stripos($url, '.m3u8') !== false)) || 
+            (stripos($contentType, 'text/html') !== false && $filesize > 0)) {
+            // Read the content to check if it's an m3u8 file
+            $content = file_get_contents($outputPath);
+            if (stripos($content, '#EXTM3U') !== false) {
+                return $this->handleHlsDownload($url, $outputPath, $content);
+            }
+            
+            // If it's HTML content, try to extract a video URL
+            if (stripos($contentType, 'text/html') !== false) {
+                $extractedUrl = $this->extractVideoUrlFromHtml($content, $url);
+                if ($extractedUrl) {
+                    // Delete the HTML file
+                    @unlink($outputPath);
+                    // Try downloading the extracted URL
+                    return $this->curlDownload($extractedUrl, $outputPath);
+                }
+            }
         }
         
         // Verify we got a successful response and a video file
@@ -525,11 +616,6 @@ class VideoDownloader
                 // We got HTML instead of a video
                 return ['success' => false, 'message' => 'Received HTML instead of video data'];
             }
-            
-            // It might be an m3u8 file, check content
-            if (stripos($content, '#EXTM3U') !== false) {
-                return $this->handleHlsDownload($url, $outputPath, $content);
-            }
         }
         
         return [
@@ -538,6 +624,61 @@ class VideoDownloader
             'size' => $filesize,
             'content_type' => $contentType
         ];
+    }
+    
+    /**
+     * Extract video URL from HTML content
+     */
+    private function extractVideoUrlFromHtml($html, $baseUrl)
+    {
+        // Look for video tags
+        if (preg_match('/<video[^>]*src=["\']([^"\']+)["\'][^>]*>/i', $html, $matches)) {
+            $videoUrl = $matches[1];
+            // Handle relative URLs
+            if (strpos($videoUrl, 'http') !== 0) {
+                $videoUrl = $this->resolveRelativeUrl($videoUrl, $baseUrl);
+            }
+            return $videoUrl;
+        }
+        
+        // Look for m3u8 URLs
+        if (preg_match('/["\']([^"\']+\.m3u8[^"\']*)["\']/', $html, $matches)) {
+            $m3u8Url = $matches[1];
+            // Handle relative URLs
+            if (strpos($m3u8Url, 'http') !== 0) {
+                $m3u8Url = $this->resolveRelativeUrl($m3u8Url, $baseUrl);
+            }
+            return $m3u8Url;
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Resolve a relative URL against a base URL
+     */
+    private function resolveRelativeUrl($relativeUrl, $baseUrl)
+    {
+        $parsedBase = parse_url($baseUrl);
+        
+        // If the relative URL starts with a slash, it's relative to the root
+        if (strpos($relativeUrl, '/') === 0) {
+            $base = $parsedBase['scheme'] . '://' . $parsedBase['host'];
+            return $base . $relativeUrl;
+        }
+        
+        // Otherwise, it's relative to the current path
+        $pathInfo = pathinfo($parsedBase['path'] ?? '');
+        $directory = isset($pathInfo['dirname']) ? $pathInfo['dirname'] : '';
+        if ($directory == '.') $directory = '';
+        $base = $parsedBase['scheme'] . '://' . $parsedBase['host'] . $directory;
+        
+        // Make sure we have a trailing slash on the directory
+        if ($base && substr($base, -1) !== '/') {
+            $base .= '/';
+        }
+        
+        return $base . $relativeUrl;
     }
     
     /**
@@ -553,12 +694,17 @@ class VideoDownloader
         $this->log("Handling HLS (m3u8) download from: {$m3u8Url}");
         
         // Try to use yt-dlp first, but if it fails, we'll use a pure PHP approach
-        $ytdlpResult = $this->tryYtDlpForHls($m3u8Url, $outputPath);
-        
-        if ($ytdlpResult['success']) {
-            return $ytdlpResult;
+        if ($this->isPython3Available()) {
+            $ytdlpResult = $this->tryYtDlpForHls($m3u8Url, $outputPath);
+            
+            if ($ytdlpResult['success']) {
+                return $ytdlpResult;
+            }
+        } else {
+            $this->log("yt-dlp failed, will try pure PHP approach");
         }
         
+        // Fallback to pure PHP approach
         $this->log("Falling back to pure PHP HLS download...");
         
         // If we don't have manifest content, download it
@@ -570,6 +716,7 @@ class VideoDownloader
         }
         
         // Parse the m3u8 file to get video segments
+        $this->log("Parsing m3u8 content...");
         $segments = $this->parseM3u8($manifestContent, $m3u8Url);
         
         if (empty($segments)) {
@@ -589,11 +736,11 @@ class VideoDownloader
             }
         }
         
+        $this->log("Found " . count($segments) . " segments in m3u8 file");
+        
         if (empty($segments)) {
             return ['success' => false, 'message' => "Could not find any video segments in the HLS stream"];
         }
-        
-        $this->log("Found " . count($segments) . " video segments to download");
         
         // Now download and concatenate all segments
         $result = $this->downloadAndConcatenateSegments($segments, $outputPath);
@@ -602,18 +749,17 @@ class VideoDownloader
     }
     
     /**
-     * Try to use yt-dlp for HLS download, but don't fail if it's not available
+     * Try to use yt-dlp for HLS download
      */
     private function tryYtDlpForHls($m3u8Url, $outputPath) 
     {
-        // First check if yt-dlp is working correctly
         try {
-            $ytdlpPath = $this->findYtDlpBinary();
-            $this->ensureExecutable($ytdlpPath);
-            
-            // Create a unique temporary file to store original URL
+            // Create a unique temporary file to store the m3u8 URL
             $tempUrlFile = $this->uploadDir . uniqid('url_') . '.txt';
             file_put_contents($tempUrlFile, $m3u8Url);
+            
+            $ytdlpPath = $this->findYtDlpBinary();
+            $this->ensureExecutable($ytdlpPath);
             
             // Build the command using yt-dlp which properly handles HLS streams
             $cmd = sprintf(
@@ -670,10 +816,9 @@ class VideoDownloader
                 ];
             }
             
-            $this->log("yt-dlp failed, will try pure PHP approach");
-            return ['success' => false, 'message' => "yt-dlp failed: {$outputStr}"];
+            return ['success' => false, 'message' => "HLS download failed with code {$returnVal}: {$outputStr}"];
             
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->log("yt-dlp failed with error: " . $e->getMessage());
             return ['success' => false, 'message' => "yt-dlp failed: " . $e->getMessage()];
         }
@@ -691,6 +836,8 @@ class VideoDownloader
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
         curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
         
         $content = curl_exec($ch);
         $error = curl_error($ch);
@@ -771,7 +918,6 @@ class VideoDownloader
         
         $variants = [];
         $currentBandwidth = 0;
-        $currentVariant = null;
         
         $lines = explode("\n", $content);
         foreach ($lines as $line) {
@@ -847,6 +993,8 @@ class VideoDownloader
             curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
             curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
             curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
             
             $segmentData = curl_exec($ch);
             $error = curl_error($ch);
@@ -917,6 +1065,8 @@ class VideoDownloader
             'Sec-Fetch-Site: none',
             'Sec-Fetch-User: ?1'
         ]);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
         
         $html = curl_exec($ch);
         curl_close($ch);
@@ -926,13 +1076,13 @@ class VideoDownloader
             return null;
         }
         
+        // Save the HTML for debugging if needed
+        $debugFile = $this->uploadDir . 'debug_html_' . uniqid() . '.txt';
+        file_put_contents($debugFile, $html);
+        $this->log("Saved debug HTML to: {$debugFile}");
+        
         // For different sites, we need different extraction methods
         if (stripos($pageUrl, 'pornhub.com') !== false) {
-            // Save the HTML for debugging if needed
-            $debugFile = $this->uploadDir . 'debug_html_' . uniqid() . '.txt';
-            file_put_contents($debugFile, $html);
-            $this->log("Saved debug HTML to: {$debugFile}");
-            
             // Look for the high quality formats first
             if (preg_match('/"quality":"1080","videoUrl":"([^"]+)"/', $html, $matches)) {
                 $videoUrl = str_replace('\\/', '/', $matches[1]);
@@ -973,12 +1123,38 @@ class VideoDownloader
                 $videoUrl = str_replace('\\/', '/', $matches[1]);
                 return $videoUrl;
             }
+        } elseif (stripos($pageUrl, 'xvideos.com') !== false) {
+            // Extract from xvideos
+            if (preg_match('/html5player\.setVideoUrlHigh\(\'([^\']+)\'/', $html, $matches)) {
+                return $matches[1];
+            }
             
-            $this->log("Could not extract video URL from Pornhub page");
+            if (preg_match('/html5player\.setVideoUrlLow\(\'([^\']+)\'/', $html, $matches)) {
+                return $matches[1];
+            }
+        } elseif (stripos($pageUrl, 'xnxx.com') !== false) {
+            // XNXX uses same player as xvideos
+            if (preg_match('/html5player\.setVideoUrlHigh\(\'([^\']+)\'/', $html, $matches)) {
+                return $matches[1];
+            }
+            
+            if (preg_match('/html5player\.setVideoUrlLow\(\'([^\']+)\'/', $html, $matches)) {
+                return $matches[1];
+            }
         }
         
-        // Add more site-specific extractors as needed
+        // Generic extraction for all sites - look for common video patterns
+        // Look for HTML5 video sources
+        if (preg_match('/<source[^>]+src=["\']([^"\']+)["\'][^>]*>/i', $html, $matches)) {
+            return $matches[1];
+        }
         
+        // Look for HLS streams
+        if (preg_match('/["\']([^"\']+\.m3u8[^"\']*)["\']/', $html, $matches)) {
+            return $matches[1];
+        }
+        
+        $this->log("Could not extract video URL from page");
         return null;
     }
 
@@ -1005,7 +1181,7 @@ class VideoDownloader
             $this->log("Updated status for video ID {$videoId} to '{$status}' with message '{$message}'. Result: " . ($result ? 'success' : 'failed'));
             
             return $result;
-        } catch (\PDOException $e) {
+        } catch (Exception $e) {
             $this->log("Database error when updating status: " . $e->getMessage());
             return false;
         }
@@ -1032,7 +1208,7 @@ class VideoDownloader
             $this->log("Updated progress for video ID {$videoId} to {$progressPercent}%. Result: " . ($result ? 'success' : 'failed'));
             
             return $result;
-        } catch (\PDOException $e) {
+        } catch (Exception $e) {
             $this->log("Database error when updating progress: " . $e->getMessage());
             return false;
         }
@@ -1059,13 +1235,15 @@ class VideoDownloader
             $this->log("Updated video path for ID {$videoId} to '{$path}'. Result: " . ($result ? 'success' : 'failed'));
             
             return $result;
-        } catch (\PDOException $e) {
+        } catch (Exception $e) {
             $this->log("Database error when updating video path: " . $e->getMessage());
             return false;
         }
     }
 
-    // Make yt-dlp executable on Linux if needed
+    /**
+     * Make binary executable on Linux if needed
+     */
     private function ensureExecutable($path)
     {
         // Only for Linux/Unix systems

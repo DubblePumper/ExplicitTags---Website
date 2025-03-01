@@ -5,11 +5,23 @@
 // test url: https://nl.pornhub.com/view_video.php?viewkey=67655e3602f62
 ob_start();
 
-// Include only the configuration files first to avoid output
-require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/config.php';
+// Import required classes at the top of the file - only import what's actually needed
+// Don't import basic PHP classes like Exception and PDO which are always available
+use YoutubeDl\Options;
+use YoutubeDl\YoutubeDl;
+use Symfony\Component\Process\Process;
+use Symfony\Component\Process\Exception\ProcessFailedException;
 
-// Autoload composer dependencies
-require_once $_SERVER['DOCUMENT_ROOT'] . '/assets/vendor/autoload.php';
+// Define base path only if not already defined
+if (!defined('BASE_PATH')) {
+    define('BASE_PATH', dirname(__DIR__, 3));
+}
+
+// Use proper path resolution for config
+require_once BASE_PATH . '/config/config.php';
+
+// Include only essential files - path adjusted for actual structure
+require_once BASE_PATH  . '/src/includes/include-all.php';
 
 // Initialize variables
 $error = null;
@@ -21,13 +33,13 @@ $processingStatus = null;
 try {
     $pdo = testDBConnection();
     if (!$pdo) {
-        throw new Exception('Database connection failed');
+        throw new \Exception('Database connection failed');
     }
     
-} catch (PDOException $e) {
+} catch (\PDOException $e) {
     error_log("Database connection error in process-video: " . $e->getMessage());
     $error = "Database connection error: " . $e->getMessage();
-} catch (Exception $e) {
+} catch (\Exception $e) {
     error_log("General error in process-video: " . $e->getMessage());
     $error = "Error: " . $e->getMessage();
 }
@@ -114,7 +126,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$error) {
         $sourceType = 'upload';
         
         // Create uploads directory if it doesn't exist
-        $uploadDir = $_SERVER['DOCUMENT_ROOT'] . '/uploads/videos/';
+        $uploadDir = dirname($_SERVER['DOCUMENT_ROOT'], 1) . '/storage/uploads/videos/';
         if (!file_exists($uploadDir)) {
             mkdir($uploadDir, 0755, true);
         }
@@ -137,11 +149,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$error) {
         // Basic URL validation
         if (!filter_var($videoUrl, FILTER_VALIDATE_URL)) {
             $error = "Invalid URL format. Please enter a valid URL.";
-        } 
-        // Check if the URL is from a supported site
-        elseif (!isUrlFromSupportedSite($videoUrl, $pdo)) {
+        } elseif (!isUrlFromSupportedSite($videoUrl, $pdo)) {
             $error = "The provided URL is not from a supported adult website. Please use a URL from a supported platform.";
+        } else {
+            // Check if the URL is from a supported site
+
         }
+
     } else {
         $error = "No video file or URL provided.";
     }
@@ -183,12 +197,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$error) {
                 $processingStatus = 'processing';
                 
                 // Load the VideoDownloader class
-                $rootPath = $_SERVER['DOCUMENT_ROOT'];
-                require_once $rootPath . '/utils/services/VideoDownloader.php';
-                
+                require_once BASE_PATH . '/src/Utils/Services/VideoDownloader.php';
+                // Load fallback class
+                require_once BASE_PATH . '/src/Utils/Services/SimpleFallbackDownloader.php';
+
                 // Create VideoDownloader instance and download the video
                 try {
-                    $downloader = new \Utils\Services\VideoDownloader($pdo);
+                    // Try to use the main VideoDownloader class
+                    if (class_exists('YoutubeDl\YoutubeDl')) {
+                        $downloader = new \Utils\Services\VideoDownloader($pdo);
+                    } else {
+                        // Fall back to simpler version if YoutubeDl is not available
+                        $downloader = new \Utils\Services\SimpleFallbackDownloader($pdo);
+                    }
                     
                     // Perform the download (but don't wait for the result before redirecting)
                     // This will start the download process
@@ -329,8 +350,8 @@ if ($videoId && !$processingStatus) {
     }
 }
 
-// Now include the visual elements - this part always comes after all potential redirects
-require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/include-all.php';
+// Ensure output buffer is clean before sending any content
+if (ob_get_length()) ob_clean();
 ?>
 
 <div class="min-h-screen py-8 px-4">
@@ -416,7 +437,12 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/include-all.php';
             </div>
         <?php else: ?>
             <!-- Redirect to upload page if accessed directly -->
-            <script>window.location.href = "/tag";</script>
+            <?php
+            // Use proper redirection with clean buffer
+            ob_clean();
+            header("Location: /tag");
+            exit;
+            ?>
         <?php endif; ?>
     </div>
 </div>

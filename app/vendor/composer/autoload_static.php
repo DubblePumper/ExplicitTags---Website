@@ -10,6 +10,7 @@ class ComposerStaticInit2192ddd85a5a271e8153fe2be3b0250b
         '320cde22f66dd4f5d3fd621d3e88b98f' => __DIR__ . '/..' . '/symfony/polyfill-ctype/bootstrap.php',
         '0e6d7bf4a5811bfa5cf40c5ccd6fae6a' => __DIR__ . '/..' . '/symfony/polyfill-mbstring/bootstrap.php',
         'a4a119a56e50fbb293281d9a48007e0e' => __DIR__ . '/..' . '/symfony/polyfill-php80/bootstrap.php',
+        '2741f1ba3a788cef1f603ed1db227e67' => __DIR__ . '/../..' . '/src/Utils/tagVideoThroughUrl/database-functions.php',
     );
 
     public static $prefixLengthsPsr4 = array (
@@ -20,6 +21,7 @@ class ComposerStaticInit2192ddd85a5a271e8153fe2be3b0250b
         'U' => 
         array (
             'Utils\\Services\\' => 15,
+            'Utils\\' => 6,
         ),
         'S' => 
         array (
@@ -39,7 +41,11 @@ class ComposerStaticInit2192ddd85a5a271e8153fe2be3b0250b
         ),
         'Utils\\Services\\' => 
         array (
-            0 => __DIR__ . '/../../..' . '/utils/services',
+            0 => __DIR__ . '/../..' . '/src/Utils/Services',
+        ),
+        'Utils\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/src/Utils',
         ),
         'Symfony\\Polyfill\\Php80\\' => 
         array (
@@ -63,7 +69,7 @@ class ComposerStaticInit2192ddd85a5a271e8153fe2be3b0250b
         ),
         'Sander\\AiAnalyserWebsite\\' => 
         array (
-            0 => __DIR__ . '/../../..' . '/',
+            0 => __DIR__ . '/../..' . '/src',
         ),
     );
 
