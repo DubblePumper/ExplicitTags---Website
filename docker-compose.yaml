@@ -3,7 +3,7 @@ services:
     container_name: php-ExplicitTags
     build:
       context: ./app
-      dockerfile: Dockerfile
+      dockerfile: ./docker/Dockerfile
     depends_on:
       - db
     volumes:
