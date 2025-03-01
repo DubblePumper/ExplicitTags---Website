@@ -3,57 +3,130 @@
  * Database helper functions for tag page and video processing
  */
 
-// Make sure we have a database connection function
-if (!function_exists('testDBConnection')) {
-    /**
-     * Create a PDO database connection
-     * @return PDO|false PDO instance on success, false on failure
-     */
-    function testDBConnection() {
-        try {
-            require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/config.php';
-            
-            if (isset($host) && isset($dbname) && isset($username) && isset($password)) {
-                $pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password, [
-                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                    PDO::ATTR_EMULATE_PREPARES => false,
-                ]);
-                return $pdo;
-            }
-            
-            return false;
-        } catch (PDOException $e) {
-            error_log("Database connection error: " . $e->getMessage());
-            return false;
-        }
+// Define BASE_PATH if not already defined
+if (!defined('BASE_PATH')) {
+    define('BASE_PATH', dirname(__DIR__, 3));
+}
+
+// Include config file with database connection information
+require_once BASE_PATH . '/config/config.php';
+
+/**
+ * Get PDO database connection
+ * @return PDO|false Database connection or false on failure
+ */
+function getDBConnection() {
+    global $dbConfig;
+    
+    try {
+        $dsn = "mysql:host={$dbConfig['host']};dbname={$dbConfig['dbname']};charset={$dbConfig['charset']}";
+        $options = [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES => false,
+            PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES {$dbConfig['charset']}",
+            PDO::ATTR_TIMEOUT => 5
+        ];
+        
+        $pdo = new PDO($dsn, $dbConfig['username'], $dbConfig['password'], $options);
+        return $pdo;
+    } catch (PDOException $e) {
+        error_log("Database connection failed: " . $e->getMessage());
+        return false;
     }
 }
 
 /**
- * Get list of supported adult websites from database
- * @return array List of supported websites with their names and URLs
+ * Get list of supported websites from database
+ * @return array Array of supported websites
  */
 function getSupportedWebsites() {
+    $pdo = getDBConnection();
+    if (!$pdo) return [];
+    
     try {
-        $pdo = testDBConnection();
-        
-        if (!$pdo) {
-            throw new Exception('Database connection failed');
-        }
-        
-        $stmt = $pdo->query("SELECT website_name, website_url FROM supported_adult_websites ORDER BY website_name");
-        
-        if (!$stmt) {
-            throw new Exception('Query failed');
-        }
-        
-        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
-        return $results;
-    } catch (Exception $e) {
+        $stmt = $pdo->query("SELECT website_name, website_url FROM supported_websites ORDER BY website_name");
+        return $stmt->fetchAll();
+    } catch (PDOException $e) {
         error_log("Error getting supported websites: " . $e->getMessage());
         return [];
+    }
+}
+
+/**
+ * Save a video processing task to the database
+ * @param array $data Video data
+ * @return int|bool Inserted ID or false on failure
+ */
+function saveVideoProcessingTask($data) {
+    $pdo = getDBConnection();
+    if (!$pdo) return false;
+    
+    try {
+        $stmt = $pdo->prepare("
+            INSERT INTO video_processing_tasks 
+            (video_url, video_file_path, status, created_at, updated_at)
+            VALUES (:video_url, :video_file_path, :status, NOW(), NOW())
+        ");
+        
+        $stmt->bindValue(':video_url', $data['video_url'] ?? null);
+        $stmt->bindValue(':video_file_path', $data['video_file_path'] ?? null);
+        $stmt->bindValue(':status', $data['status'] ?? 'pending');
+        
+        $stmt->execute();
+        return $pdo->lastInsertId();
+    } catch (PDOException $e) {
+        error_log("Error saving video task: " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Update a video processing task status
+ * @param int $taskId Task ID
+ * @param string $status New status
+ * @param array $additionalData Optional additional data to update
+ * @return bool Success or failure
+ */
+function updateVideoTaskStatus($taskId, $status, $additionalData = []) {
+    $pdo = getDBConnection();
+    if (!$pdo) return false;
+    
+    try {
+        $updateFields = ["status = :status", "updated_at = NOW()"];
+        $params = [':status' => $status, ':id' => $taskId];
+        
+        foreach ($additionalData as $field => $value) {
+            $updateFields[] = "$field = :$field";
+            $params[":$field"] = $value;
+        }
+        
+        $updateString = implode(', ', $updateFields);
+        $stmt = $pdo->prepare("UPDATE video_processing_tasks SET $updateString WHERE id = :id");
+        
+        return $stmt->execute($params);
+    } catch (PDOException $e) {
+        error_log("Error updating task status: " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Get a video processing task by ID
+ * @param int $taskId Task ID
+ * @return array|bool Task data or false on failure
+ */
+function getVideoTask($taskId) {
+    $pdo = getDBConnection();
+    if (!$pdo) return false;
+    
+    try {
+        $stmt = $pdo->prepare("SELECT * FROM video_processing_tasks WHERE id = :id");
+        $stmt->execute([':id' => $taskId]);
+        return $stmt->fetch();
+    } catch (PDOException $e) {
+        error_log("Error getting task: " . $e->getMessage());
+        return false;
     }
 }
 
@@ -64,7 +137,7 @@ function getSupportedWebsites() {
  */
 function getVideoStatus($videoId) {
     try {
-        $pdo = testDBConnection();
+        $pdo = getDBConnection();
         
         if (!$pdo) {
             throw new Exception('Database connection failed');
@@ -107,7 +180,7 @@ function getVideoStatus($videoId) {
  */
 function updateVideoStatus($videoId, $status, $message = '', $progress = null) {
     try {
-        $pdo = testDBConnection();
+        $pdo = getDBConnection();
         
         if (!$pdo) {
             throw new Exception('Database connection failed');
@@ -151,7 +224,7 @@ function updateVideoStatus($videoId, $status, $message = '', $progress = null) {
  */
 function storeVideoResults($videoId, $results) {
     try {
-        $pdo = testDBConnection();
+        $pdo = getDBConnection();
         
         if (!$pdo) {
             throw new Exception('Database connection failed');
@@ -222,7 +295,7 @@ if (!function_exists('getRandomGradientClass')) {
  */
 function getPendingVideos($limit = 5) {
     try {
-        $pdo = testDBConnection();
+        $pdo = getDBConnection();
         
         if (!$pdo) {
             throw new Exception('Database connection failed');

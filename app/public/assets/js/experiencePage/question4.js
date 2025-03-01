@@ -80,7 +80,8 @@ document.addEventListener("DOMContentLoaded", () => {
                             <img src="/assets/images/website_Images/${imgSrc}" 
                                  class="relative z-10 w-24 h-24 transition-all duration-300 group-hover:opacity-20 ${assignedClass}"
                                  data-position="${index}"
-                                 data-type="${type}">
+                                 data-type="${type}"
+                                 loading="lazy">
                             <div class="performer-placeholder absolute inset-0 z-20 flex items-center justify-center text-center p-2 bg-darkPrimairy/40">
                                 ${assignedContent}
                             </div>

@@ -1,8 +1,16 @@
 <?php
-require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/include-all.php';
-require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/config.php';
-require_once $_SERVER['DOCUMENT_ROOT'] . '/utils/tagVideoThroughUrl/database-functions.php';
-$gradients = getRandomGradientClass(true);
+// Define base path
+define('BASE_PATH', dirname(__DIR__, 2));
+
+// Include necessary files from the new structure
+require_once BASE_PATH . '/src/Includes/include-all.php';
+
+// Update path to use the new structure
+require_once BASE_PATH . '/src/Utils/tagVideoThroughUrl/database-functions.php';
+
+// Get a random gradient class for styling
+$gradientClass = getRandomGradientClass(true);
+$gradient = "bg-gradient-to-r {$gradientClass['from']} {$gradientClass['to']} bg-clip-text text-transparent";
 
 // Get supported websites from the database
 $supportedWebsitesData = getSupportedWebsites();
@@ -121,7 +129,7 @@ if ($redirect && $videoId) {
         </div>
     </main>
     
-    <?php require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/scripts.php'; ?>
+    <?php include_once BASE_PATH . '/src/Includes/scripts.php'; ?>
 
     <!-- Add global variables -->
     <script>

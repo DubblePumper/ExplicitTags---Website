@@ -1,20 +1,25 @@
 <?php
+// Define base path
+define('BASE_PATH', dirname(__DIR__, 2));
 
-require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/include-all.php';
-$gradients = getRandomGradientClass(true);
+// Include necessary files from the new structure
+require_once BASE_PATH . '/src/Includes/include-all.php';
 
-// Make sure you have no environment or config forcing "http://"
+// Get a random gradient class for styling
+
+// Get gradient class using the function from globals.php
+$gradient = getRandomGradientClass(true);
+$gradientClass = "bg-gradient-to-r {$gradient['from']} {$gradient['to']} bg-clip-text text-transparent";
 ?>
-
 <body class="text-TextWhite">
     <div id="preloader">
         <div class="spinner"></div>
     </div>
     <header>
         <div class="text-center mt-10 flex flex-col items-center justify-center space-y-2" data-aos="fade-down" data-aos-duration="1000">
-            <h1 class="text-4xl font-bold <?php echo $gradients ?>" data-aos="fade-down" data-aos-duration="1000">Customize your experience.</h1>
-            <h2 class="<?php echo $gradients; ?>" data-aos="fade-down" data-aos-duration="1000">Select what you want to find</h2>
-            <h3 class="<?php echo $gradients; ?>" data-aos="fade-down" data-aos-duration="1000">And guess what... We will find it for you</h3>
+            <h1 class="text-4xl font-bold <?php echo $gradientClass ?>" data-aos="fade-down" data-aos-duration="1000">Customize your experience.</h1>
+            <h2 class="<?php echo $gradientClass; ?>" data-aos="fade-down" data-aos-duration="1000">Select what you want to find</h2>
+            <h3 class="<?php echo $gradientClass; ?>" data-aos="fade-down" data-aos-duration="1000">And guess what... We will find it for you</h3>
         </div>
     </header>
     <main class="min-h-screen">
@@ -30,22 +35,22 @@ $gradients = getRandomGradientClass(true);
                 <!-- question 1 -->
                 <div class="question active transition-opacity duration-500 ease-in-out opacity-100 h-full md:h-96" id="question1">
                     <div class="text-center flex flex-col items-center space-y-1 mb-12" data-aos="zoom-in" data-aos-duration="1000">
-                        <h3 class="<?php echo $gradients; ?> ">First question</h3>
-                        <h2 class="<?php echo $gradients; ?> ">Are you a person <span class="underline underline-offset-4 decoration-solid decoration-secondary font-extrabold text-lg ">with</span> or <span class="underline underline-offset-4 decoration-solid decoration-secondary font-extrabold text-lg">without</span> a penis</h2>
+                        <h3 class="<?php echo $gradientClass; ?> ">First question</h3>
+                        <h2 class="<?php echo $gradientClass; ?> ">Are you a person <span class="underline underline-offset-4 decoration-solid decoration-secondary font-extrabold text-lg ">with</span> or <span class="underline underline-offset-4 decoration-solid decoration-secondary font-extrabold text-lg">without</span> a penis</h2>
                     </div>
                     <div class="flex flex-row items-center justify-around gap-x-4">
                         <div class="transform transition duration-500 hover:scale-110 p-5 rounded-full border-2 border-transparent relative group" id="man">
                             <label class="flex flex-col items-center relative">
                                 <input type="radio" name="gender" value="man" class="hidden" onchange="toggleBackground(this)">
                                 <h2 class="text-center text-secondary font-bold absolute inset-0 grid place-items-center opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10">With penis</h2>
-                                <img class="man-front cursor-pointer opacity-100 group-hover:opacity-15 transition-opacity duration-500 mx-auto w-16 h-16 sm:w-24 sm:h-24 md:w-32 md:h-32" src="/assets/images/website_Images/man_front.svg" alt="Man silhouette" data-aos="zoom-in" data-aos-duration="1000" />
+                                <img loading="lazy" class="man-front cursor-pointer opacity-100 group-hover:opacity-15 transition-opacity duration-500 mx-auto w-16 h-16 sm:w-24 sm:h-24 md:w-32 md:h-32" src="/assets/images/website_Images/man_front.svg" alt="Man silhouette" data-aos="zoom-in" data-aos-duration="1000" />
                             </label>
                         </div>
                         <div class="transform transition duration-500 hover:scale-110 p-5 rounded-full border-2 border-transparent relative group" id="woman">
                             <label class="flex flex-col items-center relative">
                                 <input type="radio" name="gender" value="woman" class="hidden" onchange="toggleBackground(this)">
                                 <h2 class="text-center text-secondary font-bold absolute inset-0 grid place-items-center opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10">Without penis</h2>
-                                <img class="woman-front cursor-pointer opacity-100 group-hover:opacity-15 transition-opacity duration-500 mx-auto w-16 h-16 sm:w-24 sm:h-24 md:w-32 md:h-32" src="/assets/images/website_Images/woman_front.svg" alt="Woman silhouette" data-aos="zoom-in" data-aos-duration="1000" />
+                                <img loading="lazy" class="woman-front cursor-pointer opacity-100 group-hover:opacity-15 transition-opacity duration-500 mx-auto w-16 h-16 sm:w-24 sm:h-24 md:w-32 md:h-32" src="/assets/images/website_Images/woman_front.svg" alt="Woman silhouette" data-aos="zoom-in" data-aos-duration="1000" />
                             </label>
                         </div>
                     </div>
@@ -53,8 +58,8 @@ $gradients = getRandomGradientClass(true);
                 <!-- question 2 -->
                 <div class="question transition-opacity duration-500 ease-in-out opacity-0 hidden h-auto md:h-96 mb-10 h-full" id="question2">
                     <div class="text-center flex flex-col items-center space-y-1 mb-12" data-aos="zoom-in" data-aos-duration="1000">
-                        <h3 class="<?php echo $gradients; ?>">Second question</h3>
-                        <h2 class="<?php echo $gradients; ?>">How many people need to be involved in total?</h2>
+                        <h3 class="<?php echo $gradientClass; ?>">Second question</h3>
+                        <h2 class="<?php echo $gradientClass; ?>">How many people need to be involved in total?</h2>
                     </div>
                     <div class="flex flex-col md:flex-row justify-evenly w-full md:divide-x md:divide-secondary space-y-6 md:space-y-0">
                         <div class="flex flex-col text-center items-center flex-grow" id="howMuchMan" data-aos="zoom-in" data-aos-duration="1000">
@@ -108,8 +113,8 @@ $gradients = getRandomGradientClass(true);
                 <!-- question 3 -->
                 <div class="question transition-opacity duration-500 ease-in-out opacity-0 hidden h-full md:h-96 mb-10  " id="question3">
                     <div class="text-center flex flex-col items-center space-y-1 mb-12" data-aos="zoom-in" data-aos-duration="1000">
-                        <h3 class="<?php echo $gradients; ?>">third question</h3>
-                        <h2 class="<?php echo $gradients; ?>">Is there a performer that you want to include or exclude?</h2>
+                        <h3 class="<?php echo $gradientClass; ?>">third question</h3>
+                        <h2 class="<?php echo $gradientClass; ?>">Is there a performer that you want to include or exclude?</h2>
                     </div>
                     <div class="flex flex-col items-center space-y-4">
                         <input type="text" id="searchBar" placeholder="Search by name" class="text-TextWhite bg-transparent border-2 border-secondary focus:outline-none rounded">
@@ -137,8 +142,8 @@ $gradients = getRandomGradientClass(true);
                 <!-- question 4 -->
                 <div class="question transition-opacity duration-500 ease-in-out opacity-0 hidden h-auto md:h-96 mb-10 " id="question4">
                     <div class="text-center flex flex-col items-center space-y-1 mb-12" data-aos="zoom-in" data-aos-duration="1000">
-                        <h3 class="<?php echo $gradients; ?>">Fourth question</h3>
-                        <h2 class="<?php echo $gradients; ?>">Do you want to edit someone?</h2>
+                        <h3 class="<?php echo $gradientClass; ?>">Fourth question</h3>
+                        <h2 class="<?php echo $gradientClass; ?>">Do you want to edit someone?</h2>
                     </div>
                     <div class="flex flex-col items-center space-y-4" id="peopleSummary"></div>
                 </div>
@@ -156,10 +161,9 @@ $gradients = getRandomGradientClass(true);
             </div>
         </form>
     </main>
-    <?php require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/scripts.php'; ?>
-
-    <!-- Add global variables -->
-    <script>
+    <?php include_once BASE_PATH . '/src/Includes/scripts.php'; ?>
+        <!-- Add global variables -->
+        <script>
         window.APP_VERSION = '<?php echo time(); ?>';
         window.performerDetailsCache = new Map();
     </script>

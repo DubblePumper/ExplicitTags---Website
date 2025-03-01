@@ -1,16 +1,28 @@
 <?php
+// Define base path
+define('BASE_PATH', dirname(__DIR__));
 
-require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/include-all.php';
+// Include necessary files from the new structure
+require_once BASE_PATH . '/config/config.php';
+require_once BASE_PATH . '/src/includes/include-all.php';
 
-$gradients =   getRandomGradientClass(true);
+// Get gradient class using the function from globals.php
+$gradient = getRandomGradientClass(true);
+$gradientClass = "bg-gradient-to-r {$gradient['from']} {$gradient['to']} bg-clip-text text-transparent";
+
+// Set page title and description for head.php
+$pageTitle = "ExplicitTags - AI Adult Content Analyzer";
+$pageDescription = "Advanced AI system for analyzing and categorizing adult content";
 ?>
-
 <body class="text-TextWhite">
+    <div id="preloader">
+        <div class="spinner"></div>
+    </div>
     <header>
         <div class="mt-10 flex flex-col items-center justify-center space-y-2" data-aos="fade-down" data-aos-duration="1000">
-            <h1 class="text-4xl font-bold <?php echo $gradients; ?> text-center" data-aos="fade-down" data-aos-duration="1000">Welcome to <?php echo $siteName; ?></h1>
-            <h2 class="<?php echo $gradients; ?> text-center" data-aos="fade-down" data-aos-duration="1000">Choose the following options to customize your search results</h2>
-            <h3 class="<?php echo $gradients; ?> text-center" data-aos="fade-down" data-aos-duration="1000">Please follow the step by step guide</h3>
+            <h1 class="text-4xl font-bold <?php echo $gradientClass; ?> text-center" data-aos="fade-down" data-aos-duration="1000">Welcome to <?php echo $siteName; ?></h1>
+            <h2 class="<?php echo $gradientClass; ?> text-center" data-aos="fade-down" data-aos-duration="1000">Choose the following options to customize your search results</h2>
+            <h3 class="<?php echo $gradientClass; ?> text-center" data-aos="fade-down" data-aos-duration="1000">Please follow the step by step guide</h3>
         </div>
     </header>
     <main>
@@ -23,7 +35,6 @@ $gradients =   getRandomGradientClass(true);
             </a>
         </div>
     </main>
-    <?php
-    require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/scripts.php';
-    ?>
+    <?php include_once BASE_PATH . '/src/Includes/scripts.php'; ?>
 </body>
+</html>
