@@ -1,3 +1,4 @@
 /vendor/
 app/includes/config.php
 
+app/config/config.php
