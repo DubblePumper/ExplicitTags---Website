@@ -1,4 +1,15 @@
-[2025-02-28 12:03:35] Video processing worker started with arguments: /var/www/html/utils/workers/process_video_queue.php, 46
-[2025-02-28 12:03:35] Starting processing for video ID: 46
-[2025-02-28 12:08:35] Video processing worker started with arguments: /var/www/html/utils/workers/process_video_queue.php, 47
-[2025-02-28 12:08:35] Starting processing for video ID: 47
+[2025-03-02 11:55:39] [INFO] Using LogManager class
+[2025-03-02 11:55:39] [INFO] Video processing started
+[2025-03-02 11:55:39] [INFO] Includes loaded successfully
+[2025-03-02 11:55:40] [INFO] Database connection established
+[2025-03-02 11:55:40] [INFO] Processing POST request
+[2025-03-02 11:55:40] [INFO] Processing URL submission: https://nl.pornhub.com/view_video.php?viewkey=ph62aab0917d335
+[2025-03-02 11:55:40] [INFO] URL validated successfully: https://nl.pornhub.com/view_video.php?viewkey=ph62aab0917d335
+[2025-03-02 11:55:40] [INFO] Inserting video into database
+[2025-03-02 11:55:40] [INFO] Video inserted into database with ID: 72
+[2025-03-02 11:55:40] [INFO] VideoDownloader class instantiated successfully
+[2025-03-02 11:55:40] [INFO] Using LogManager class
+[2025-03-02 11:55:40] [INFO] Video processing started
+[2025-03-02 11:55:40] [INFO] Includes loaded successfully
+[2025-03-02 11:55:40] [INFO] Database connection established
+[2025-03-02 11:55:40] [INFO] Retrieved video data for ID: 72, Status: processing

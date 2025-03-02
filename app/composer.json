@@ -20,7 +20,8 @@
     }
   ],
   "require": {
-    "norkunas/youtube-dl-php": "^2.10",
-    "symfony/process": "^7.2"
+    "norkunas/youtube-dl-php": "dev-master",
+    "symfony/process": "^7.2",
+    "php-ffmpeg/php-ffmpeg": "^1.3"
   }
 }

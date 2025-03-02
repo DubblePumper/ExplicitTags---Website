@@ -2,352 +2,418 @@
 // Make sure there are no whitespace or newlines before the opening PHP tag
 
 // Buffer output to prevent "headers already sent" errors
-// test url: https://nl.pornhub.com/view_video.php?viewkey=67655e3602f62
 ob_start();
-
-// Import required classes at the top of the file - only import what's actually needed
-// Don't import basic PHP classes like Exception and PDO which are always available
-use YoutubeDl\Options;
-use YoutubeDl\YoutubeDl;
-use Symfony\Component\Process\Process;
-use Symfony\Component\Process\Exception\ProcessFailedException;
 
 // Define base path only if not already defined
 if (!defined('BASE_PATH')) {
     define('BASE_PATH', dirname(__DIR__, 3));
 }
 
-// Use proper path resolution for config
-require_once BASE_PATH . '/config/config.php';
+// Basic error setup
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
-// Include only essential files - path adjusted for actual structure
-require_once BASE_PATH  . '/src/includes/include-all.php';
-
-// Initialize variables
-$error = null;
-$success = false;
-$videoId = null;
-$processingStatus = null;
-
-// Create PDO instance with error handling
-try {
-    $pdo = testDBConnection();
-    if (!$pdo) {
-        throw new \Exception('Database connection failed');
+// Basic logging function for critical errors
+function basic_log($message, $level = 'INFO') {
+    $logFile = BASE_PATH . '/storage/logs/video_processing.log';
+    $logDir = dirname($logFile);
+    
+    if (!is_dir($logDir)) {
+        mkdir($logDir, 0755, true);
     }
     
-} catch (\PDOException $e) {
-    error_log("Database connection error in process-video: " . $e->getMessage());
-    $error = "Database connection error: " . $e->getMessage();
-} catch (\Exception $e) {
-    error_log("General error in process-video: " . $e->getMessage());
-    $error = "Error: " . $e->getMessage();
+    $timestamp = date('Y-m-d H:i:s');
+    $logLine = "[$timestamp] [$level] $message" . PHP_EOL;
+    file_put_contents($logFile, $logLine, FILE_APPEND);
+    
+    if ($level === 'ERROR') {
+        error_log("[$level] $message");
+    }
 }
 
-// Helper function to check if URL is from a supported adult website
-function isUrlFromSupportedSite($url, $pdo) {
-    $supportedDomains = [];
+try {
+    // First, include the simple logger for fallback
+    require_once __DIR__ . '/simple-logger.php';
     
+    // Initialize the logger (either with LogManager or SimpleLogger)
+    $logFile = BASE_PATH . '/storage/logs/video_processing.log';
+    
+    // Try to include LogManager
+    if (file_exists(BASE_PATH . '/src/Utils/Services/LogManager.php')) {
+        require_once BASE_PATH . '/src/Utils/Services/LogManager.php';
+        $logger = new \Utils\Services\LogManager($logFile, true);
+        basic_log("Using LogManager class", 'INFO');
+    } else {
+        $logger = new SimpleLogger($logFile, true);
+        basic_log("Using SimpleLogger fallback class", 'INFO');
+    }
+    
+    $logger->info("Video processing started");
+    
+    // Load configuration and essential files
+    require_once BASE_PATH . '/config/config.php';
+    require_once BASE_PATH . '/src/includes/include-all.php';
+    $logger->info("Includes loaded successfully");
+    
+    // Initialize variables
+    $error = null;
+    $success = false;
+    $videoId = null;
+    $processingStatus = null;
+    
+    // Create PDO instance with error handling
     try {
-        // Get all supported websites from the database
-        $stmt = $pdo->query("SELECT website_url FROM supported_adult_websites");
-        if ($stmt) {
-            $sites = $stmt->fetchAll(PDO::FETCH_COLUMN);
-            
-            // Extract domains from URLs
-            foreach ($sites as $siteUrl) {
-                $domain = parse_url($siteUrl, PHP_URL_HOST);
-                if ($domain) {
-                    $supportedDomains[] = strtolower(preg_replace('/^www\./', '', $domain));
+        $pdo = testDBConnection();
+        if (!$pdo) {
+            throw new \Exception('Database connection failed');
+        }
+        $logger->info("Database connection established");
+    } catch (\PDOException $e) {
+        $errorMsg = "Database connection error: " . $e->getMessage();
+        $logger->error($errorMsg);
+        $error = $errorMsg;
+    } catch (\Exception $e) {
+        $errorMsg = "General error: " . $e->getMessage();
+        $logger->error($errorMsg);
+        $error = $errorMsg;
+    }
+    
+    // Helper function to check if URL is from a supported website
+    function isUrlFromSupportedSite($url, $pdo) {
+        $supportedDomains = [];
+        
+        try {
+            // Get supported websites from database
+            $stmt = $pdo->query("SELECT website_url FROM supported_websites");
+            if ($stmt) {
+                $sites = $stmt->fetchAll(PDO::FETCH_COLUMN);
+                
+                // Extract domains from URLs
+                foreach ($sites as $siteUrl) {
+                    $domain = parse_url($siteUrl, PHP_URL_HOST);
+                    if ($domain) {
+                        $supportedDomains[] = strtolower(preg_replace('/^www\./', '', $domain));
+                    }
                 }
             }
-        }
-        
-        // Fallback domains if DB query returns no results
-        if (empty($supportedDomains)) {
-            $supportedDomains = [
+            
+            // Fallback domains if DB query returns no results
+            if (empty($supportedDomains)) {
+                $supportedDomains = [
+                    'pornhub.com', 'redtube.com', 'spankbang.com',
+                    'tnaflix.com', 'tube8.com', 'xhamster.com',
+                    'xnxx.com', 'xvideos.com', 'youporn.com'
+                ];
+            }
+            
+            // Check if URL domain matches supported domains
+            $urlHost = parse_url($url, PHP_URL_HOST);
+            if (!$urlHost) return false;
+            
+            $urlHost = strtolower(preg_replace('/^www\./', '', $urlHost));
+            
+            foreach ($supportedDomains as $domain) {
+                if ($urlHost === $domain || preg_match('/' . preg_quote($domain, '/') . '$/', $urlHost)) {
+                    return true;
+                }
+            }
+            
+            return false;
+        } catch (Exception $e) {
+            error_log("Error checking supported sites: " . $e->getMessage());
+            
+            // Fallback hardcoded list if query fails
+            $fallbackDomains = [
                 'pornhub.com', 'redtube.com', 'spankbang.com',
                 'tnaflix.com', 'tube8.com', 'xhamster.com',
                 'xnxx.com', 'xvideos.com', 'youporn.com'
             ];
-        }
-        
-        // Get the hostname from the URL and remove www if present
-        $urlHost = parse_url($url, PHP_URL_HOST);
-        if (!$urlHost) return false;
-        
-        $urlHost = strtolower(preg_replace('/^www\./', '', $urlHost));
-        
-        // Check if hostname matches or ends with any supported domain
-        foreach ($supportedDomains as $domain) {
-            if ($urlHost === $domain || preg_match('/' . preg_quote($domain, '/') . '$/', $urlHost)) {
-                return true;
+            
+            $urlHost = parse_url($url, PHP_URL_HOST);
+            if (!$urlHost) return false;
+            
+            $urlHost = strtolower(preg_replace('/^www\./', '', $urlHost));
+            
+            foreach ($fallbackDomains as $domain) {
+                if ($urlHost === $domain || preg_match('/' . preg_quote($domain, '/') . '$/', $urlHost)) {
+                    return true;
+                }
             }
+            
+            return false;
         }
-        
-        return false;
-    } catch (Exception $e) {
-        error_log("Error checking supported sites: " . $e->getMessage());
-        
-        // Fallback hardcoded list if query fails
-        $fallbackDomains = [
-            'pornhub.com', 'redtube.com', 'spankbang.com',
-            'tnaflix.com', 'tube8.com', 'xhamster.com',
-            'xnxx.com', 'xvideos.com', 'youporn.com'
-        ];
-        
-        $urlHost = parse_url($url, PHP_URL_HOST);
-        if (!$urlHost) return false;
-        
-        $urlHost = strtolower(preg_replace('/^www\./', '', $urlHost));
-        
-        foreach ($fallbackDomains as $domain) {
-            if ($urlHost === $domain || preg_match('/' . preg_quote($domain, '/') . '$/', $urlHost)) {
-                return true;
-            }
-        }
-        
-        return false;
-    }
-}
-
-// Process the form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$error) {
-    // Get user IP for tracking
-    $userIp = $_SERVER['REMOTE_ADDR'];
-    $sourceType = null;
-    $sourcePath = null;
-    $videoUrl = null;
-    $returnUrl = isset($_POST['return_url']) ? $_POST['return_url'] : '/tag';
-    
-    // Check if this is a file upload or URL submission
-    if (!empty($_FILES['videoFile']['tmp_name'])) {
-        // Handle file upload
-        $sourceType = 'upload';
-        
-        // Create uploads directory if it doesn't exist
-        $uploadDir = dirname($_SERVER['DOCUMENT_ROOT'], 1) . '/storage/uploads/videos/';
-        if (!file_exists($uploadDir)) {
-            mkdir($uploadDir, 0755, true);
-        }
-        
-        // Generate a unique filename
-        $fileName = uniqid('video_') . '_' . basename($_FILES['videoFile']['name']);
-        $targetFilePath = $uploadDir . $fileName;
-        
-        // Move the uploaded file
-        if (move_uploaded_file($_FILES['videoFile']['tmp_name'], $targetFilePath)) {
-            $sourcePath = '/uploads/videos/' . $fileName;
-        } else {
-            $error = "Failed to upload file. Please try again.";
-        }
-    } elseif (!empty($_POST['videoUrl'])) {
-        // Handle URL submission
-        $sourceType = 'url';
-        $videoUrl = trim($_POST['videoUrl']);
-        
-        // Basic URL validation
-        if (!filter_var($videoUrl, FILTER_VALIDATE_URL)) {
-            $error = "Invalid URL format. Please enter a valid URL.";
-        } elseif (!isUrlFromSupportedSite($videoUrl, $pdo)) {
-            $error = "The provided URL is not from a supported adult website. Please use a URL from a supported platform.";
-        } else {
-            // Check if the URL is from a supported site
-
-        }
-
-    } else {
-        $error = "No video file or URL provided.";
     }
     
-    // If no errors, insert into database
-    if (!$error) {
-        try {
-            // Insert into database with status message
-            $stmt = $pdo->prepare("
-                INSERT INTO processed_videos 
-                (source_type, source_path, video_url, processing_status, user_ip, download_progress, status_message) 
-                VALUES (:source_type, :source_path, :video_url, 'pending', :user_ip, 0, :status_message)
-            ");
+    // Process POST submission
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$error) {
+        $logger->info("Processing POST request");
+        
+        // Get user IP for tracking
+        $userIp = $_SERVER['REMOTE_ADDR'];
+        $sourceType = null;
+        $sourcePath = null;
+        $videoUrl = null;
+        $returnUrl = isset($_POST['return_url']) ? $_POST['return_url'] : '/tag';
+        
+        // Check if this is a file upload or URL submission
+        if (!empty($_FILES['videoFile']['tmp_name'])) {
+            // Handle file upload
+            $sourceType = 'upload';
+            $logger->info("Processing file upload");
             
-            $statusMessage = $sourceType === 'upload' ? 'Upload complete, waiting for processing' : 'Waiting to start download';
+            // Create uploads directory if it doesn't exist
+            $uploadDir = dirname($_SERVER['DOCUMENT_ROOT'], 1) . '/storage/uploads/videos/';
+            if (!file_exists($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+                $logger->info("Created uploads directory: {$uploadDir}");
+            }
             
-            $stmt->execute([
-                ':source_type' => $sourceType,
-                ':source_path' => $sourcePath,
-                ':video_url' => $videoUrl,
-                ':user_ip' => $userIp,
-                ':status_message' => $statusMessage
-            ]);
+            // Generate a unique filename
+            $fileName = uniqid('video_') . '_' . basename($_FILES['videoFile']['name']);
+            $targetFilePath = $uploadDir . $fileName;
             
-            $videoId = $pdo->lastInsertId();
-            $success = true;
+            $logger->info("Uploading file: " . $_FILES['videoFile']['name'] . " to {$targetFilePath}");
             
-            // If URL submission, process it immediately instead of queuing
-            if ($sourceType === 'url') {
-                // Update status to "processing" for URLs
-                $updateStmt = $pdo->prepare("
-                    UPDATE processed_videos 
-                    SET processing_status = 'processing',
-                        status_message = 'Starting download...'
-                    WHERE id = :id
+            // Move the uploaded file
+            if (move_uploaded_file($_FILES['videoFile']['tmp_name'], $targetFilePath)) {
+                $sourcePath = '/uploads/videos/' . $fileName;
+                $logger->info("File uploaded successfully: {$sourcePath}");
+            } else {
+                $error = "Failed to upload file. Please try again.";
+                $logger->error("File upload failed: " . (error_get_last() ? error_get_last()['message'] : 'Unknown error'));
+            }
+        } elseif (!empty($_POST['videoUrl'])) {
+            // Handle URL submission
+            $sourceType = 'url';
+            $videoUrl = trim($_POST['videoUrl']);
+            $logger->info("Processing URL submission: {$videoUrl}");
+            
+            // Basic URL validation
+            if (!filter_var($videoUrl, FILTER_VALIDATE_URL)) {
+                $error = "Invalid URL format. Please enter a valid URL.";
+                $logger->warning("Invalid URL format: {$videoUrl}");
+            } elseif (!isUrlFromSupportedSite($videoUrl, $pdo)) {
+                $error = "The provided URL is not from a supported website. Please use a URL from a supported platform.";
+                $logger->warning("URL not from supported site: {$videoUrl}");
+            } else {
+                $logger->info("URL validated successfully: {$videoUrl}");
+            }
+        } else {
+            $error = "No video file or URL provided.";
+            $logger->warning("No file or URL provided in request");
+        }
+        
+        // If no errors, insert into database
+        if (!$error) {
+            try {
+                $logger->info("Inserting video into database");
+                
+                // Insert into database with status message
+                $stmt = $pdo->prepare("
+                    INSERT INTO processed_videos 
+                    (source_type, source_path, video_url, processing_status, user_ip, download_progress, status_message) 
+                    VALUES (:source_type, :source_path, :video_url, 'pending', :user_ip, 0, :status_message)
                 ");
                 
-                $updateStmt->execute([':id' => $videoId]);
-                $processingStatus = 'processing';
+                $statusMessage = $sourceType === 'upload' ? 'Upload complete, waiting for processing' : 'Waiting to start download';
                 
-                // Load the VideoDownloader class
-                require_once BASE_PATH . '/src/Utils/Services/VideoDownloader.php';
-                // Load fallback class
-                require_once BASE_PATH . '/src/Utils/Services/SimpleFallbackDownloader.php';
-
-                // Create VideoDownloader instance and download the video
-                try {
-                    // Try to use the main VideoDownloader class
-                    if (class_exists('YoutubeDl\YoutubeDl')) {
-                        $downloader = new \Utils\Services\VideoDownloader($pdo);
-                    } else {
-                        // Fall back to simpler version if YoutubeDl is not available
-                        $downloader = new \Utils\Services\SimpleFallbackDownloader($pdo);
-                    }
-                    
-                    // Perform the download (but don't wait for the result before redirecting)
-                    // This will start the download process
-                    error_log("Starting direct download for video ID: $videoId");
-                    
-                    // Start session for storing download progress
-                    if (session_status() === PHP_SESSION_NONE) {
-                        session_start();
-                    }
-                    $_SESSION['download_video_id'] = $videoId;
-                    
-                    // Redirect early to show the progress page
-                    if ($returnUrl && (strpos($returnUrl, '/') === 0)) {
-                        // Add the ID as a parameter to the return URL
-                        $separator = strpos($returnUrl, '?') !== false ? '&' : '?';
-                        
-                        // Clean output buffer before sending headers
-                        ob_clean();
-                        
-                        // Perform the redirect
-                        header("Location: {$returnUrl}{$separator}id={$videoId}");
-                        
-                        // After redirect, continue with download in the background
-                        ob_start();
-                        // Send headers to prevent client disconnection
-                        header('Connection: close');
-                        header('Content-Length: ' . ob_get_length());
-                        ob_end_flush();
-                        flush();
-                        
-                        // Now continue with the download process
-                        if (function_exists('fastcgi_finish_request')) {
-                            fastcgi_finish_request();
-                        }
-                        
-                        // Now perform the download
-                        $result = $downloader->downloadVideo($videoId, $videoUrl);
-                        error_log("Download completed with status: " . $result['status']);
-                        
-                        exit;
-                    } else {
-                        // If no redirect, do the download synchronously
-                        $result = $downloader->downloadVideo($videoId, $videoUrl);
-                        error_log("Download completed with status: " . $result['status']);
-                    }
-                    
-                } catch (Exception $e) {
-                    error_log("Error in video download: " . $e->getMessage());
-                    
-                    // Update status to failed
-                    $failStmt = $pdo->prepare("
+                $stmt->execute([
+                    ':source_type' => $sourceType,
+                    ':source_path' => $sourcePath,
+                    ':video_url' => $videoUrl,
+                    ':user_ip' => $userIp,
+                    ':status_message' => $statusMessage
+                ]);
+                
+                $videoId = $pdo->lastInsertId();
+                $success = true;
+                $logger->info("Video inserted into database with ID: {$videoId}");
+                
+                // If URL submission, process it immediately instead of queuing
+                if ($sourceType === 'url') {
+                    // Update status to "processing" for URLs
+                    $updateStmt = $pdo->prepare("
                         UPDATE processed_videos 
-                        SET processing_status = 'failed',
-                            status_message = :message
+                        SET processing_status = 'processing',
+                            status_message = 'Starting download...'
                         WHERE id = :id
                     ");
                     
-                    $failStmt->execute([
-                        ':id' => $videoId,
-                        ':message' => 'Download error: ' . $e->getMessage()
-                    ]);
+                    $updateStmt->execute([':id' => $videoId]);
+                    $processingStatus = 'processing';
+                    
+                    // Load the VideoDownloader class
+                    if (file_exists(BASE_PATH . '/src/Utils/Services/VideoDownloader.php')) {
+                        require_once BASE_PATH . '/src/Utils/Services/VideoDownloader.php';
+                        
+                        // Try to download the video
+                        try {
+                            // Create VideoDownloader instance
+                            if (class_exists('\\Utils\\Services\\VideoDownloader')) {
+                                $downloader = new \Utils\Services\VideoDownloader($pdo);
+                                $logger->info("VideoDownloader class instantiated successfully");
+                            } else {
+                                throw new Exception("VideoDownloader class not found after including file");
+                            }
+                            
+                            // Start session for tracking progress
+                            if (session_status() === PHP_SESSION_NONE) {
+                                session_start();
+                            }
+                            $_SESSION['download_video_id'] = $videoId;
+                            
+                            // Redirect early to show the progress page
+                            if ($returnUrl && (strpos($returnUrl, '/') === 0)) {
+                                // Add the ID as a parameter to the return URL
+                                $separator = strpos($returnUrl, '?') !== false ? '&' : '?';
+                                
+                                // Clean output buffer before sending headers
+                                ob_clean();
+                                
+                                // Perform the redirect
+                                header("Location: {$returnUrl}{$separator}id={$videoId}");
+                                
+                                // After redirect, continue with download in the background
+                                ob_start();
+                                // Send headers to prevent client disconnection
+                                header('Connection: close');
+                                header('Content-Length: ' . ob_get_length());
+                                ob_end_flush();
+                                flush();
+                                
+                                // Now continue with the download process
+                                if (function_exists('fastcgi_finish_request')) {
+                                    fastcgi_finish_request();
+                                }
+                                
+                                // Now perform the download
+                                $result = $downloader->downloadVideo($videoId, $videoUrl);
+                                $logger->info("Download completed with status: " . $result['status']);
+                                
+                                exit;
+                            } else {
+                                // If no redirect, do the download synchronously
+                                $result = $downloader->downloadVideo($videoId, $videoUrl);
+                                $logger->info("Download completed with status: " . $result['status']);
+                            }
+                            
+                        } catch (Exception $e) {
+                            $logger->error("Error in video download: " . $e->getMessage());
+                            
+                            // Update status to failed
+                            $failStmt = $pdo->prepare("
+                                UPDATE processed_videos 
+                                SET processing_status = 'failed',
+                                    status_message = :message
+                                WHERE id = :id
+                            ");
+                            
+                            $failStmt->execute([
+                                ':id' => $videoId,
+                                ':message' => 'Download error: ' . $e->getMessage()
+                            ]);
+                        }
+                    } else {
+                        $logger->error("VideoDownloader class file not found");
+                        
+                        // Update status to failed
+                        $failStmt = $pdo->prepare("
+                            UPDATE processed_videos 
+                            SET processing_status = 'failed',
+                                status_message = :message
+                            WHERE id = :id
+                        ");
+                        
+                        $failStmt->execute([
+                            ':id' => $videoId,
+                            ':message' => 'Download error: VideoDownloader class not found'
+                        ]);
+                    }
+                } else {
+                    // For direct uploads, just update status to processing
+                    $updateStmt = $pdo->prepare("
+                        UPDATE processed_videos 
+                        SET processing_status = 'processing',
+                            status_message = 'Processing uploaded video'
+                        WHERE id = :id
+                    ");
+                    
+                    $updateStmt->execute([':id' => $videoId]);
+                    $processingStatus = 'processing';
                 }
-            } else {
-                // For direct uploads, just update status to processing
-                $updateStmt = $pdo->prepare("
-                    UPDATE processed_videos 
-                    SET processing_status = 'processing',
-                        status_message = 'Processing uploaded video'
-                    WHERE id = :id
-                ");
                 
-                $updateStmt->execute([':id' => $videoId]);
-                $processingStatus = 'processing';
+                // If we have a return URL and it's a safe path, redirect with the video ID
+                if ($returnUrl && (strpos($returnUrl, '/') === 0)) {
+                    // Add the ID as a parameter to the return URL
+                    $separator = strpos($returnUrl, '?') !== false ? '&' : '?';
+                    
+                    // Clean output buffer before sending headers
+                    ob_clean();
+                    
+                    // Perform the redirect
+                    header("Location: {$returnUrl}{$separator}id={$videoId}");
+                    exit;
+                }
+                
+            } catch (PDOException $e) {
+                $logger->error("Database error during insert: " . $e->getMessage());
+                $error = "Database error: " . $e->getMessage();
             }
-            
-            // If we have a return URL and it's a safe path, redirect with the video ID
-            if ($returnUrl && (strpos($returnUrl, '/') === 0)) {
-                // Add the ID as a parameter to the return URL
-                $separator = strpos($returnUrl, '?') !== false ? '&' : '?';
-                
-                // Clean output buffer before sending headers
-                ob_clean();
-                
-                // Perform the redirect
-                header("Location: {$returnUrl}{$separator}id={$videoId}");
-                exit;
-            }
-            
-        } catch (PDOException $e) {
-            error_log("Database error during insert: " . $e->getMessage());
-            $error = "Database error: " . $e->getMessage();
         }
     }
-}
-
-// Check if this is a direct access with an ID
-if (!$success && !$error && isset($_GET['id']) && is_numeric($_GET['id'])) {
-    $videoId = (int)$_GET['id'];
     
-    try {
-        $stmt = $pdo->prepare("
-            SELECT * FROM processed_videos WHERE id = :id
-        ");
-        $stmt->execute([':id' => $videoId]);
-        $videoData = $stmt->fetch();
+    // Check if this is a direct access with an ID
+    if (!$success && !$error && isset($_GET['id']) && is_numeric($_GET['id'])) {
+        $videoId = (int)$_GET['id'];
         
-        if ($videoData) {
-            $success = true;
-            $processingStatus = $videoData['processing_status'];
-        } else {
-            $error = "Video not found";
+        try {
+            $stmt = $pdo->prepare("
+                SELECT * FROM processed_videos WHERE id = :id
+            ");
+            $stmt->execute([':id' => $videoId]);
+            $videoData = $stmt->fetch();
+            
+            if ($videoData) {
+                $success = true;
+                $processingStatus = $videoData['processing_status'];
+                $statusMessage = $videoData['status_message'] ?? '';
+                $logger->info("Retrieved video data for ID: {$videoId}, Status: {$processingStatus}");
+            } else {
+                $error = "Video not found";
+                $logger->warning("Video not found with ID: {$videoId}");
+            }
+        } catch (PDOException $e) {
+            $logger->error("Error retrieving video data: " . $e->getMessage());
+            $error = "Error retrieving video data";
         }
-    } catch (PDOException $e) {
-        error_log("Error retrieving video data: " . $e->getMessage());
-        $error = "Error retrieving video data";
     }
-}
-
-// If we have a video ID but no processing status yet, fetch the current status
-if ($videoId && !$processingStatus) {
-    try {
-        $stmt = $pdo->prepare("
-            SELECT processing_status, status_message 
-            FROM processed_videos 
-            WHERE id = :id
-        ");
-        
-        $stmt->execute([':id' => $videoId]);
-        $result = $stmt->fetch();
-        
-        if ($result) {
-            $processingStatus = $result['processing_status'];
-            $statusMessage = $result['status_message'] ?? '';
+    
+    // If we have a video ID but no processing status yet, fetch the current status
+    if ($videoId && !$processingStatus) {
+        try {
+            $stmt = $pdo->prepare("
+                SELECT processing_status, status_message 
+                FROM processed_videos 
+                WHERE id = :id
+            ");
+            
+            $stmt->execute([':id' => $videoId]);
+            $result = $stmt->fetch();
+            
+            if ($result) {
+                $processingStatus = $result['processing_status'];
+                $statusMessage = $result['status_message'] ?? '';
+                $logger->info("Fetched processing status: {$processingStatus} for video ID: {$videoId}");
+            }
+        } catch (PDOException $e) {
+            $logger->error("Error checking status: " . $e->getMessage());
+            $error = "Error checking status: " . $e->getMessage();
         }
-    } catch (PDOException $e) {
-        error_log("Error checking status: " . $e->getMessage());
-        $error = "Error checking status: " . $e->getMessage();
     }
+} catch (Exception $e) {
+    $errorMsg = "Critical error: " . $e->getMessage();
+    basic_log($errorMsg, 'ERROR');
+    $error = $errorMsg;
 }
 
 // Ensure output buffer is clean before sending any content
@@ -597,3 +663,4 @@ if (ob_get_length()) ob_clean();
     });
 </script>
 <?php endif; ?>
+``` 
