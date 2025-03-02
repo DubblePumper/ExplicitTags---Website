@@ -9,8 +9,15 @@ use Exception;
  * A simplified downloader that doesn't require external packages
  * Used as a fallback when YoutubeDl is not available
  */
+if (!defined('BASE_PATH')) {
+    define('BASE_PATH', dirname(__DIR__, 3));
+}
+
 class SimpleFallbackDownloader 
 {
+    // Class constants
+    private const RELATIVE_VIDEO_PATH = '/storage/uploads/videos/';
+    
     private $pdo;
     private $uploadDir;
     private $logFile;
@@ -20,29 +27,20 @@ class SimpleFallbackDownloader
     {
         $this->pdo = $pdo;
         
-        // Set paths
-        if (defined('UPLOADS_DIR')) {
-            $this->uploadDir = UPLOADS_DIR;
-        } else {
-            $this->uploadDir = $_SERVER['DOCUMENT_ROOT'] . '/uploads/videos/';
-        }
-        
+        // Use global constants if defined, otherwise use class fallbacks
+        $this->uploadDir = defined('VIDEOS_PATH') ? VIDEOS_PATH . '/' : dirname($_SERVER['DOCUMENT_ROOT'], 1) . self::RELATIVE_VIDEO_PATH;
         if (!file_exists($this->uploadDir)) {
             mkdir($this->uploadDir, 0755, true);
         }
         
-        if (defined('LOG_DIR')) {
-            $this->logFile = LOG_DIR . 'simple_downloader.log';
-        } else {
-            $this->logFile = dirname($_SERVER['DOCUMENT_ROOT']) . '/logs/simple_downloader.log';
-        }
+        $this->logFile = defined('LOGS_PATH') ? LOGS_PATH . '/simple_downloader.log' : dirname($_SERVER['DOCUMENT_ROOT'], 1) . '/storage/logs/simple_downloader.log';
         
         // Ensure log directory exists
         if (!file_exists(dirname($this->logFile))) {
             mkdir(dirname($this->logFile), 0755, true);
         }
         
-        $this->log("SimpleFallbackDownloader initialized");
+        $this->log("SimpleFallbackDownloader initialized with uploadDir: {$this->uploadDir}");
     }
     
     /**
@@ -62,8 +60,8 @@ class SimpleFallbackDownloader
             $success = $this->simpleCurlDownload($url, $outputPath);
             
             if ($success) {
-                // Update database
-                $relativePath = '/uploads/videos/' . $fileName;
+                // Use class constant for paths
+                $relativePath = self::RELATIVE_VIDEO_PATH . $fileName;
                 $this->updateVideoPath($videoId, $relativePath);
                 $this->updateProgress($videoId, 100);
                 $this->updateStatus($videoId, 'completed', 'Download complete');
@@ -80,8 +78,8 @@ class SimpleFallbackDownloader
                 // Try to create a fallback file
                 $this->createTestFile($outputPath);
                 
-                // Update database
-                $relativePath = '/uploads/videos/' . $fileName;
+                // Use class constant for paths
+                $relativePath = self::RELATIVE_VIDEO_PATH . $fileName;
                 $this->updateVideoPath($videoId, $relativePath);
                 $this->updateProgress($videoId, 100);
                 $this->updateStatus($videoId, 'completed', 'Created test file');

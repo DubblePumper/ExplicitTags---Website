@@ -19,8 +19,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
 }
 
+if (!defined('BASE_PATH')) {
+    define('BASE_PATH', dirname(__DIR__, 3));
+}
+
 // Include necessary files
-require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/config.php';
+// Use proper path resolution for config
+require_once BASE_PATH . '/config/config.php';
 
 // For debugging - log that this endpoint was accessed
 error_log('check-processing-status.php accessed with ID: ' . ($_GET['id'] ?? 'none'));
