@@ -13,3 +13,22 @@
 [2025-03-02 11:55:40] [INFO] Includes loaded successfully
 [2025-03-02 11:55:40] [INFO] Database connection established
 [2025-03-02 11:55:40] [INFO] Retrieved video data for ID: 72, Status: processing
+[2025-03-02 12:07:52] [INFO] Using LogManager class
+[2025-03-02 12:07:52] [INFO] Video processing started
+[2025-03-02 12:07:52] [INFO] Includes loaded successfully
+[2025-03-02 12:07:52] [INFO] Database connection established
+[2025-03-02 12:08:05] [INFO] Using LogManager class
+[2025-03-02 12:08:05] [INFO] Video processing started
+[2025-03-02 12:08:05] [INFO] Includes loaded successfully
+[2025-03-02 12:08:05] [INFO] Database connection established
+[2025-03-02 12:08:05] [INFO] Processing POST request
+[2025-03-02 12:08:05] [INFO] Processing URL submission: https://nl.pornhub.com/view_video.php?viewkey=ph62aab0917d335
+[2025-03-02 12:08:05] [INFO] URL validated successfully: https://nl.pornhub.com/view_video.php?viewkey=ph62aab0917d335
+[2025-03-02 12:08:05] [INFO] Inserting video into database
+[2025-03-02 12:08:05] [INFO] Video inserted into database with ID: 73
+[2025-03-02 12:08:05] [INFO] VideoDownloader class instantiated successfully
+[2025-03-02 12:08:06] [INFO] Using LogManager class
+[2025-03-02 12:08:06] [INFO] Video processing started
+[2025-03-02 12:08:06] [INFO] Includes loaded successfully
+[2025-03-02 12:08:06] [INFO] Database connection established
+[2025-03-02 12:08:06] [INFO] Retrieved video data for ID: 73, Status: processing

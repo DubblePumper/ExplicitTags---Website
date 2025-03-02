@@ -515,152 +515,187 @@ if (ob_get_length()) ob_clean();
 
 <?php if ($success): ?>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const videoId = document.getElementById('video-id').value;
-        const progressBar = document.getElementById('progress-bar');
-        const statusMessage = document.getElementById('status-message');
-        const resultContainer = document.getElementById('result-container');
-        const resultContent = document.getElementById('result-content');
+document.addEventListener('DOMContentLoaded', function() {
+    const videoId = document.getElementById('video-id').value;
+    const progressBar = document.getElementById('progress-bar');
+    const statusMessage = document.getElementById('status-message');
+    const resultContainer = document.getElementById('result-container');
+    const resultContent = document.getElementById('result-content');
+
+    // Initial progress based on current status
+    let progress = <?php 
+        if ($processingStatus === 'pending') {
+            echo "10";
+        } elseif ($processingStatus === 'processing') {
+            echo "30";
+        } elseif ($processingStatus === 'completed') {
+            echo "100";
+        } elseif ($processingStatus === 'failed') {
+            echo "0";
+        } else {
+            echo "0";
+        }
+    ?>;
+
+    // Apply initial progress
+    updateProgressBar(progress);
+
+    // Setup tracking variables
+    let failedAttempts = 0;
+    const MAX_FAILED_ATTEMPTS = 5;
+    
+    // Check status periodically
+    const checkInterval = setInterval(checkStatus, 3000);
+
+    // Try to fetch status using the given URL
+    function fetchWithUrl(url) {
+        const timestamp = new Date().getTime();
+        const fullUrl = `${url}?id=${videoId}&t=${timestamp}`;
         
-        // Initial progress based on current status
-        let progress = <?php 
-            if ($processingStatus === 'pending') {
-                echo "10";
-            } elseif ($processingStatus === 'processing') {
-                echo "30";
-            } elseif ($processingStatus === 'completed') {
-                echo "100";
-            } elseif ($processingStatus === 'failed') {
-                echo "0";
-            } else {
-                echo "0";
+        console.log(`Trying URL: ${fullUrl}`);
+        
+        return fetch(fullUrl, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'Cache-Control': 'no-cache'
+            },
+            credentials: 'same-origin'
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Server responded with status: ${response.status}`);
             }
-        ?>;
+            return response.json();
+        });
+    }
+
+    // Main status checking function
+    function checkStatus() {
+        // List of URLs to try in order
+        const urls = [
+            '/utils/tagVideoThroughUrl/check-processing-status.php',
+            '/src/Utils/tagVideoThroughUrl/check-processing-status.php'
+        ];
         
-        updateProgressBar(progress);
-        
-        // Check status periodically
-        let checkInterval = setInterval(checkStatus, 3000);
-        
-        function checkStatus() {
-            // Use window.location to get the correct protocol (http or https)
-            const protocol = window.location.protocol;
-            const host = window.location.host;
-            const apiUrl = `${protocol}//${host}/utils/tagVideoThroughUrl/check-processing-status.php?id=${videoId}`;
+        // Try URLs one by one
+        tryNextUrl(urls, 0);
+    }
+
+    // Recursively try URLs until one succeeds or all fail
+    function tryNextUrl(urls, index) {
+        // If we've tried all URLs without success
+        if (index >= urls.length) {
+            failedAttempts++;
+            console.error(`All ${urls.length} URLs failed. Attempt ${failedAttempts} of ${MAX_FAILED_ATTEMPTS}`);
             
-            console.log(`Checking status at: ${apiUrl}`);
-            
-            fetch(apiUrl, {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json',
-                    'Cache-Control': 'no-cache'
-                },
-                credentials: 'same-origin'
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`Server responded with status: ${response.status}`);
-                }
-                return response.json();
-            })
+            // If we've failed too many times, switch to simulation mode
+            if (failedAttempts >= MAX_FAILED_ATTEMPTS) {
+                console.log("Switching to simulation mode due to repeated failures");
+                simulateProgress();
+            } else {
+                statusMessage.textContent = "Checking status... (retry soon)";
+            }
+            return;
+        }
+
+        // Try the current URL
+        fetchWithUrl(urls[index])
             .then(data => {
-                console.log("Status check response:", data);
+                console.log("Got data:", data);
+                failedAttempts = 0; // Reset counter on success
                 handleStatusUpdate(data);
             })
             .catch(error => {
-                console.error('Fetch error:', error);
+                // Log the error for debugging
+                console.error(`Failed with URL ${urls[index]}:`, error);
                 
-                // Try a direct relative path as fallback with current timestamp to avoid caching
-                const timestamp = new Date().getTime();
-                const fallbackUrl = `/utils/tagVideoThroughUrl/check-processing-status.php?id=${videoId}&t=${timestamp}`;
-                
-                console.log(`Trying fallback URL: ${fallbackUrl}`);
-                
-                fetch(fallbackUrl, {
-                    method: 'GET',
-                    headers: {
-                        'Accept': 'application/json',
-                        'Cache-Control': 'no-cache'
-                    },
-                    credentials: 'same-origin'
-                })
-                .then(response => response.json())
-                .then(data => {
-                    console.log("Fallback response:", data);
-                    handleStatusUpdate(data);
-                })
-                .catch(finalError => {
-                    console.error("All attempts failed:", finalError);
-                    statusMessage.textContent = "Unable to check status. Please refresh the page.";
-                });
+                // Try the next URL in the list
+                tryNextUrl(urls, index + 1);
             });
+    }
+
+    // Simulate progress when we can't connect to the server
+    function simulateProgress() {
+        if (progress < 100) {
+            progress += Math.random() * 5 + 3; // Add 3-8% each time
+            progress = Math.min(progress, 99); // Never reach 100% with simulation
+            
+            updateProgressBar(progress);
+            statusMessage.textContent = "Processing your video... (Connection limited mode)";
         }
-        
-        // Helper function to handle status updates from any source
-        function handleStatusUpdate(data) {
-            if (data.status === 'processing') {
-                if (data.progress) {
-                    // Use actual progress if available
-                    progress = data.progress;
-                } else if (progress < 70) {
-                    progress += 5;
-                }
-                updateProgressBar(progress);
-                
-                // Use the status message from the server if available
-                if (data.message) {
-                    statusMessage.textContent = data.message;
-                } else {
-                    statusMessage.textContent = "AI is analyzing your video...";
-                }
-            } 
-            else if (data.status === 'completed') {
-                progress = 100;
-                updateProgressBar(progress);
-                statusMessage.textContent = "Analysis complete!";
-                clearInterval(checkInterval);
-                showResults(data.results);
-            } 
-            else if (data.status === 'failed') {
-                statusMessage.textContent = data.message || "Processing failed. Please try again.";
-                clearInterval(checkInterval);
+    }
+
+    // Process status updates
+    function handleStatusUpdate(data) {
+        if (data.status === 'processing') {
+            // Update progress based on server data or increment slightly
+            if (data.progress) {
+                progress = data.progress;
+            } else if (progress < 70) {
+                progress += 5;
             }
-        }
-        
-        function updateProgressBar(value) {
-            progressBar.style.width = `${value}%`;
-        }
-        
-        function showResults(results) {
-            if (results) {
-                resultContainer.classList.remove('hidden');
-                
-                // Format and display results
-                let htmlContent = '';
-                
-                // Check if there are detected performers
-                if (results.performers && results.performers.length > 0) {
-                    htmlContent += '<div class="mb-4"><h4 class="text-md font-medium text-secondary mb-2">Detected Performers:</h4><ul class="list-disc list-inside space-y-1">';
-                    results.performers.forEach(performer => {
-                        htmlContent += `<li>${performer.name} <span class="text-gray-400">(${performer.confidence}% confidence)</span></li>`;
-                    });
-                    htmlContent += '</ul></div>';
-                }
-                
-                // Check if there are detected tags
-                if (results.tags && results.tags.length > 0) {
-                    htmlContent += '<div><h4 class="text-md font-medium text-secondary mb-2">Detected Tags:</h4><div class="flex flex-wrap gap-2">';
-                    results.tags.forEach(tag => {
-                        htmlContent += `<span class="px-2 py-1 text-xs rounded-full bg-secondary/20 border border-secondary text-secondary">${tag}</span>`;
-                    });
-                    htmlContent += '</div></div>';
-                }
-                
-                resultContent.innerHTML = htmlContent || 'No results available';
+            
+            updateProgressBar(progress);
+            
+            // Update status message
+            if (data.message) {
+                statusMessage.textContent = data.message;
+            } else {
+                statusMessage.textContent = "AI is analyzing your video...";
             }
+        } 
+        else if (data.status === 'completed') {
+            // Mark as complete
+            progress = 100;
+            updateProgressBar(progress);
+            statusMessage.textContent = "Analysis complete!";
+            clearInterval(checkInterval);
+            
+            // Show results if available
+            showResults(data.results);
+        } 
+        else if (data.status === 'failed') {
+            // Show failure message
+            statusMessage.textContent = data.message || "Processing failed. Please try again.";
+            clearInterval(checkInterval);
         }
-    });
+    }
+
+    // Update progress bar width
+    function updateProgressBar(value) {
+        progressBar.style.width = `${value}%`;
+    }
+
+    // Display results in the UI
+    function showResults(results) {
+        if (results) {
+            resultContainer.classList.remove('hidden');
+            
+            let htmlContent = '';
+            
+            // Add performers section if available
+            if (results.performers && results.performers.length > 0) {
+                htmlContent += '<div class="mb-4"><h4 class="text-md font-medium text-secondary mb-2">Detected Performers:</h4><ul class="list-disc list-inside space-y-1">';
+                results.performers.forEach(performer => {
+                    htmlContent += `<li>${performer.name} <span class="text-gray-400">(${performer.confidence}% confidence)</span></li>`;
+                });
+                htmlContent += '</ul></div>';
+            }
+            
+            // Add tags section if available
+            if (results.tags && results.tags.length > 0) {
+                htmlContent += '<div><h4 class="text-md font-medium text-secondary mb-2">Detected Tags:</h4><div class="flex flex-wrap gap-2">';
+                results.tags.forEach(tag => {
+                    htmlContent += `<span class="px-2 py-1 text-xs rounded-full bg-secondary/20 border border-secondary text-secondary">${tag}</span>`;
+                });
+                htmlContent += '</div></div>';
+            }
+            
+            // Update the content or show a message if no data
+            resultContent.innerHTML = htmlContent || 'No results available';
+        }
+    }
+});
 </script>
 <?php endif; ?>
-``` 

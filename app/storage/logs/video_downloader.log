@@ -3,3 +3,8 @@
 [2025-03-02 11:55:40] [INFO] Starting download for video ID 72 from URL: https://nl.pornhub.com/view_video.php?viewkey=ph62aab0917d335
 [2025-03-02 11:55:40] [DEBUG] Target file path: /var/www/html/storage/uploads/videos/video_67c4473c4c82e.mp4
 [2025-03-02 11:55:40] [DEBUG] Status updated for video ID 72: processing, Preparing to download video..., Progress: 10%
+[2025-03-02 12:08:05] [INFO] VideoDownloader initialized. Upload directory: /var/www/html/storage/uploads/videos/
+[2025-03-02 12:08:05] [DEBUG] Status updated for video ID 73: processing, Initializing download..., Progress: %
+[2025-03-02 12:08:05] [INFO] Starting download for video ID 73 from URL: https://nl.pornhub.com/view_video.php?viewkey=ph62aab0917d335
+[2025-03-02 12:08:05] [DEBUG] Target file path: /var/www/html/storage/uploads/videos/video_67c44a25c8935.mp4
+[2025-03-02 12:08:05] [DEBUG] Status updated for video ID 73: processing, Preparing to download video..., Progress: 10%
