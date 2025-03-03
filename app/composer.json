@@ -22,6 +22,7 @@
   "require": {
     "norkunas/youtube-dl-php": "dev-master",
     "symfony/process": "^7.2",
-    "php-ffmpeg/php-ffmpeg": "^1.3"
+    "php-ffmpeg/php-ffmpeg": "^1.3",
+    "monolog/monolog": "^3.8"
   }
 }

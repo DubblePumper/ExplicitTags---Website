@@ -1,34 +1,26 @@
-[2025-03-02 11:55:39] [INFO] Using LogManager class
-[2025-03-02 11:55:39] [INFO] Video processing started
-[2025-03-02 11:55:39] [INFO] Includes loaded successfully
-[2025-03-02 11:55:40] [INFO] Database connection established
-[2025-03-02 11:55:40] [INFO] Processing POST request
-[2025-03-02 11:55:40] [INFO] Processing URL submission: https://nl.pornhub.com/view_video.php?viewkey=ph62aab0917d335
-[2025-03-02 11:55:40] [INFO] URL validated successfully: https://nl.pornhub.com/view_video.php?viewkey=ph62aab0917d335
-[2025-03-02 11:55:40] [INFO] Inserting video into database
-[2025-03-02 11:55:40] [INFO] Video inserted into database with ID: 72
-[2025-03-02 11:55:40] [INFO] VideoDownloader class instantiated successfully
-[2025-03-02 11:55:40] [INFO] Using LogManager class
-[2025-03-02 11:55:40] [INFO] Video processing started
-[2025-03-02 11:55:40] [INFO] Includes loaded successfully
-[2025-03-02 11:55:40] [INFO] Database connection established
-[2025-03-02 11:55:40] [INFO] Retrieved video data for ID: 72, Status: processing
-[2025-03-02 12:07:52] [INFO] Using LogManager class
-[2025-03-02 12:07:52] [INFO] Video processing started
-[2025-03-02 12:07:52] [INFO] Includes loaded successfully
-[2025-03-02 12:07:52] [INFO] Database connection established
-[2025-03-02 12:08:05] [INFO] Using LogManager class
-[2025-03-02 12:08:05] [INFO] Video processing started
-[2025-03-02 12:08:05] [INFO] Includes loaded successfully
-[2025-03-02 12:08:05] [INFO] Database connection established
-[2025-03-02 12:08:05] [INFO] Processing POST request
-[2025-03-02 12:08:05] [INFO] Processing URL submission: https://nl.pornhub.com/view_video.php?viewkey=ph62aab0917d335
-[2025-03-02 12:08:05] [INFO] URL validated successfully: https://nl.pornhub.com/view_video.php?viewkey=ph62aab0917d335
-[2025-03-02 12:08:05] [INFO] Inserting video into database
-[2025-03-02 12:08:05] [INFO] Video inserted into database with ID: 73
-[2025-03-02 12:08:05] [INFO] VideoDownloader class instantiated successfully
-[2025-03-02 12:08:06] [INFO] Using LogManager class
-[2025-03-02 12:08:06] [INFO] Video processing started
-[2025-03-02 12:08:06] [INFO] Includes loaded successfully
-[2025-03-02 12:08:06] [INFO] Database connection established
-[2025-03-02 12:08:06] [INFO] Retrieved video data for ID: 73, Status: processing
+[2025-03-03T13:55:31.794131+00:00] video_processing.INFO: Received video processing request [] []
+[2025-03-03T13:55:31.844944+00:00] video_processing.INFO: Processing video URL: https://nl.pornhub.com/view_video.php?viewkey=6697a0066f68d [] []
+[2025-03-03T13:55:31.991409+00:00] video_processing.INFO: Created database entry {"video_id":"74"} []
+[2025-03-03T14:16:03.552450+00:00] video_processing.INFO: Received video processing request [] []
+[2025-03-03T14:16:03.601744+00:00] video_processing.INFO: Processing video URL: https://nl.pornhub.com/view_video.php?viewkey=6697a0066f68d [] []
+[2025-03-03T14:16:03.734377+00:00] video_processing.INFO: Created database entry {"video_id":"75"} []
+[2025-03-03T14:16:50.640655+00:00] video_processing.INFO: Video downloaded successfully {"video_id":"75","file_path":"/var/www/html/storage/uploads/videos/6697a0066f68d.mp4"} []
+[2025-03-03T14:34:20.192457+00:00] video_processing.INFO: Received video processing request [] []
+[2025-03-03T14:34:20.239850+00:00] video_processing.INFO: Processing video URL: https://nl.pornhub.com/view_video.php?viewkey=6697a0066f68d [] []
+[2025-03-03T14:34:20.385809+00:00] video_processing.INFO: Created database entry {"video_id":"76"} []
+[2025-03-03T14:34:20.861293+00:00] video_processing.ERROR: Download failed {"video_id":"76","error":"An error occurred: Providing download path via `output` option is prohibited. Set the download path when creating Options object or calling `downloadPath` method."} []
+[2025-03-03T14:48:06.196234+00:00] video_processing.INFO: Received video processing request [] []
+[2025-03-03T14:48:06.242717+00:00] video_processing.INFO: Processing video URL: https://nl.pornhub.com/view_video.php?viewkey=6697a0066f68d [] []
+[2025-03-03T14:48:06.373470+00:00] video_processing.INFO: Created database entry {"video_id":"77"} []
+[2025-03-03T14:56:22.576614+00:00] video_processing.INFO: Received video processing request [] []
+[2025-03-03T14:56:22.624132+00:00] video_processing.INFO: Processing video URL: https://nl.pornhub.com/view_video.php?viewkey=6697a0066f68d [] []
+[2025-03-03T14:56:22.753513+00:00] video_processing.INFO: Created database entry {"video_id":"78"} []
+[2025-03-03T14:56:27.443497+00:00] video_processing.INFO: Video downloaded successfully {"video_id":"78","file_path":{"SplFileInfo":"/var/www/html/storage/uploads/videos/6697a0066f68d.mp4"}} []
+----------------[2025-03-03T14:57:32.345739+00:00] video_processing.INFO: Received video processing request [] []
+[2025-03-03T14:57:32.391622+00:00] video_processing.INFO: Processing video URL: https://nl.pornhub.com/view_video.php?viewkey=6697a0066f68d [] []
+[2025-03-03T14:57:32.529050+00:00] video_processing.INFO: Created database entry {"video_id":"79"} []
+[2025-03-03T14:57:37.182377+00:00] video_processing.INFO: Video downloaded successfully {"video_id":"79","file_path":{"SplFileInfo":"/var/www/html/storage/uploads/videos/6697a0066f68d.mp4"}} []
+---[2025-03-03T14:58:40.055546+00:00] video_processing.INFO: Received video processing request [] []
+[2025-03-03T14:58:40.106977+00:00] video_processing.INFO: Processing video URL: https://nl.pornhub.com/view_video.php?viewkey=6697a0066f68d [] []
+[2025-03-03T14:58:40.297191+00:00] video_processing.INFO: Created database entry {"video_id":"80"} []
+[2025-03-03T14:59:31.847789+00:00] video_processing.INFO: Video downloaded successfully {"video_id":"80","file_path":{"SplFileInfo":"/var/www/html/storage/uploads/videos/6697a0066f68d.mp4"}} []

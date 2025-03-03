@@ -13,407 +13,333 @@ if (!defined('BASE_PATH')) {
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-// Basic logging function for critical errors
-function basic_log($message, $level = 'INFO') {
-    $logFile = BASE_PATH . '/storage/logs/video_processing.log';
-    $logDir = dirname($logFile);
-    
-    if (!is_dir($logDir)) {
-        mkdir($logDir, 0755, true);
-    }
-    
-    $timestamp = date('Y-m-d H:i:s');
-    $logLine = "[$timestamp] [$level] $message" . PHP_EOL;
-    file_put_contents($logFile, $logLine, FILE_APPEND);
-    
-    if ($level === 'ERROR') {
-        error_log("[$level] $message");
+// Include necessary files
+require_once BASE_PATH . '/vendor/autoload.php';
+require_once BASE_PATH . '/src/Utils/tagVideoThroughUrl/database-functions.php';
+
+// Set up custom logging
+use Monolog\Level;
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
+
+use YoutubeDl\YoutubeDl;
+use YoutubeDl\Options;
+use YoutubeDl\Exception\ExecutableNotFoundException;
+use YoutubeDl\Exception\YoutubeDlException;
+use YoutubeDl\Exception\DownloadException;
+
+use Symfony\Component\Process\Exception\ProcessFailedException;
+// Initialize log directories
+$logDir = BASE_PATH . '/storage/logs';
+$uploadsDir = BASE_PATH . '/storage/uploads/videos';
+
+// Create directories if they don't exist
+if (!file_exists($logDir)) {
+    mkdir($logDir, 0755, true);
+}
+
+if (!file_exists($uploadsDir)) {
+    mkdir($uploadsDir, 0755, true);
+}
+
+// Setup loggers
+$downloadLogger = new Logger('video_downloader');
+$downloadLogger->pushHandler(new StreamHandler($logDir . '/video_downloader.log', Logger::DEBUG));
+
+$processingLogger = new Logger('video_processing');
+$processingLogger->pushHandler(new StreamHandler($logDir . '/video_processing.log', Logger::DEBUG));
+
+// Function to download video
+function downloadVideo($url, $downloadLogger, $uploadsDir) {
+    try {
+        // Configure youtube-dl
+        $binPath = BASE_PATH . '/vendor/yt-dlp_linux';
+        if (PHP_OS_FAMILY === 'Windows') {
+            $binPath = BASE_PATH . '/vendor/yt-dlp.exe';
+        }
+        
+        $downloadLogger->info('Starting download process for URL: ' . $url);
+        $downloadLogger->info('Using binary at: ' . $binPath);
+        
+        if (!file_exists($binPath)) {
+            throw new ExecutableNotFoundException('yt-dlp binary not found at: ' . $binPath);
+        }
+
+        // Create YoutubeDl instance
+        $youtubeDl = new YoutubeDl();
+        $youtubeDl->setBinPath($binPath);
+        
+        // Create options using fluent interface
+        $options = Options::create()
+            ->downloadPath($uploadsDir)
+            ->format('best[height<=720]')
+            ->output('%(id)s.%(ext)s')
+            ->noCheckCertificate(true)
+            ->noPlaylist();
+        
+        $downloadLogger->info('Starting download with options', [
+            'format' => 'best[height<=720]', 
+            'output' => '%(id)s.%(ext)s',
+            'download_path' => $uploadsDir
+        ]);
+        
+        // Download the video
+        // Download the video with options
+        $video = $youtubeDl->download(
+            Options::create()
+                ->downloadPath($uploadsDir)
+                ->format('best[height<=720]')
+                ->output('%(id)s.%(ext)s')
+                ->noCheckCertificate(true)
+                ->noPlaylist()
+                ->url($url)
+        );
+        // Get the video information
+        $videos = $video->getVideos();
+        
+        if (empty($videos)) {
+            throw new YoutubeDlException('No videos were downloaded');
+        }
+        
+        $videoFilePath = $videos[0]->getFile();
+        $downloadLogger->info('Download completed successfully', ['file_path' => $videoFilePath]);
+        
+        return [
+            'success' => true,
+            'file_path' => $videoFilePath,
+            'info' => $video->getVideos()[0]->getTitle()
+        ];
+    } catch (ExecutableNotFoundException $e) {
+        $downloadLogger->error('Executable not found: ' . $e->getMessage());
+        return [
+            'success' => false,
+            'error' => 'YouTube downloader executable not found: ' . $e->getMessage()
+        ];
+    } catch (YoutubeDlException $e) {
+        $downloadLogger->error('Download error: ' . $e->getMessage());
+        return [
+            'success' => false,
+            'error' => 'Failed to download video: ' . $e->getMessage()
+        ];
+    } catch (ProcessFailedException $e) {
+        $downloadLogger->error('Process failed: ' . $e->getMessage());
+        return [
+            'success' => false,
+            'error' => 'Video processing failed: ' . $e->getMessage()
+        ];
+    } catch (Exception $e) {
+        $downloadLogger->error('General error: ' . $e->getMessage());
+        return [
+            'success' => false,
+            'error' => 'An error occurred: ' . $e->getMessage()
+        ];
     }
 }
 
-try {
-    // First, include the simple logger for fallback
-    require_once __DIR__ . '/simple-logger.php';
+// Initialize variables
+$error = null;
+$success = false;
+$processingStatus = 'pending';
+$statusMessage = '';
+$videoId = null;
+
+// Process form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $processingLogger->info('Received video processing request');
     
-    // Initialize the logger (either with LogManager or SimpleLogger)
-    $logFile = BASE_PATH . '/storage/logs/video_processing.log';
-    
-    // Try to include LogManager
-    if (file_exists(BASE_PATH . '/src/Utils/Services/LogManager.php')) {
-        require_once BASE_PATH . '/src/Utils/Services/LogManager.php';
-        $logger = new \Utils\Services\LogManager($logFile, true);
-        basic_log("Using LogManager class", 'INFO');
-    } else {
-        $logger = new SimpleLogger($logFile, true);
-        basic_log("Using SimpleLogger fallback class", 'INFO');
-    }
-    
-    $logger->info("Video processing started");
-    
-    // Load configuration and essential files
-    require_once BASE_PATH . '/config/config.php';
-    require_once BASE_PATH . '/src/includes/include-all.php';
-    $logger->info("Includes loaded successfully");
-    
-    // Initialize variables
-    $error = null;
-    $success = false;
-    $videoId = null;
-    $processingStatus = null;
-    
-    // Create PDO instance with error handling
-    try {
-        $pdo = testDBConnection();
-        if (!$pdo) {
-            throw new \Exception('Database connection failed');
-        }
-        $logger->info("Database connection established");
-    } catch (\PDOException $e) {
-        $errorMsg = "Database connection error: " . $e->getMessage();
-        $logger->error($errorMsg);
-        $error = $errorMsg;
-    } catch (\Exception $e) {
-        $errorMsg = "General error: " . $e->getMessage();
-        $logger->error($errorMsg);
-        $error = $errorMsg;
-    }
-    
-    // Helper function to check if URL is from a supported website
-    function isUrlFromSupportedSite($url, $pdo) {
-        $supportedDomains = [];
+    // Check if we have a URL or an uploaded file
+    if (!empty($_POST['videoUrl'])) {
+        // Process URL submission
+        $videoUrl = filter_var($_POST['videoUrl'], FILTER_SANITIZE_URL);
+        $processingLogger->info('Processing video URL: ' . $videoUrl);
         
-        try {
-            // Get supported websites from database
-            $stmt = $pdo->query("SELECT website_url FROM supported_websites");
-            if ($stmt) {
-                $sites = $stmt->fetchAll(PDO::FETCH_COLUMN);
-                
-                // Extract domains from URLs
-                foreach ($sites as $siteUrl) {
-                    $domain = parse_url($siteUrl, PHP_URL_HOST);
-                    if ($domain) {
-                        $supportedDomains[] = strtolower(preg_replace('/^www\./', '', $domain));
-                    }
-                }
-            }
-            
-            // Fallback domains if DB query returns no results
-            if (empty($supportedDomains)) {
-                $supportedDomains = [
-                    'pornhub.com', 'redtube.com', 'spankbang.com',
-                    'tnaflix.com', 'tube8.com', 'xhamster.com',
-                    'xnxx.com', 'xvideos.com', 'youporn.com'
-                ];
-            }
-            
-            // Check if URL domain matches supported domains
-            $urlHost = parse_url($url, PHP_URL_HOST);
-            if (!$urlHost) return false;
-            
-            $urlHost = strtolower(preg_replace('/^www\./', '', $urlHost));
-            
-            foreach ($supportedDomains as $domain) {
-                if ($urlHost === $domain || preg_match('/' . preg_quote($domain, '/') . '$/', $urlHost)) {
-                    return true;
-                }
-            }
-            
-            return false;
-        } catch (Exception $e) {
-            error_log("Error checking supported sites: " . $e->getMessage());
-            
-            // Fallback hardcoded list if query fails
-            $fallbackDomains = [
-                'pornhub.com', 'redtube.com', 'spankbang.com',
-                'tnaflix.com', 'tube8.com', 'xhamster.com',
-                'xnxx.com', 'xvideos.com', 'youporn.com'
-            ];
-            
-            $urlHost = parse_url($url, PHP_URL_HOST);
-            if (!$urlHost) return false;
-            
-            $urlHost = strtolower(preg_replace('/^www\./', '', $urlHost));
-            
-            foreach ($fallbackDomains as $domain) {
-                if ($urlHost === $domain || preg_match('/' . preg_quote($domain, '/') . '$/', $urlHost)) {
-                    return true;
-                }
-            }
-            
-            return false;
-        }
-    }
-    
-    // Process POST submission
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$error) {
-        $logger->info("Processing POST request");
-        
-        // Get user IP for tracking
-        $userIp = $_SERVER['REMOTE_ADDR'];
-        $sourceType = null;
-        $sourcePath = null;
-        $videoUrl = null;
-        $returnUrl = isset($_POST['return_url']) ? $_POST['return_url'] : '/tag';
-        
-        // Check if this is a file upload or URL submission
-        if (!empty($_FILES['videoFile']['tmp_name'])) {
-            // Handle file upload
-            $sourceType = 'upload';
-            $logger->info("Processing file upload");
-            
-            // Create uploads directory if it doesn't exist
-            $uploadDir = dirname($_SERVER['DOCUMENT_ROOT'], 1) . '/storage/uploads/videos/';
-            if (!file_exists($uploadDir)) {
-                mkdir($uploadDir, 0755, true);
-                $logger->info("Created uploads directory: {$uploadDir}");
-            }
-            
-            // Generate a unique filename
-            $fileName = uniqid('video_') . '_' . basename($_FILES['videoFile']['name']);
-            $targetFilePath = $uploadDir . $fileName;
-            
-            $logger->info("Uploading file: " . $_FILES['videoFile']['name'] . " to {$targetFilePath}");
-            
-            // Move the uploaded file
-            if (move_uploaded_file($_FILES['videoFile']['tmp_name'], $targetFilePath)) {
-                $sourcePath = '/uploads/videos/' . $fileName;
-                $logger->info("File uploaded successfully: {$sourcePath}");
-            } else {
-                $error = "Failed to upload file. Please try again.";
-                $logger->error("File upload failed: " . (error_get_last() ? error_get_last()['message'] : 'Unknown error'));
-            }
-        } elseif (!empty($_POST['videoUrl'])) {
-            // Handle URL submission
-            $sourceType = 'url';
-            $videoUrl = trim($_POST['videoUrl']);
-            $logger->info("Processing URL submission: {$videoUrl}");
-            
-            // Basic URL validation
-            if (!filter_var($videoUrl, FILTER_VALIDATE_URL)) {
-                $error = "Invalid URL format. Please enter a valid URL.";
-                $logger->warning("Invalid URL format: {$videoUrl}");
-            } elseif (!isUrlFromSupportedSite($videoUrl, $pdo)) {
-                $error = "The provided URL is not from a supported website. Please use a URL from a supported platform.";
-                $logger->warning("URL not from supported site: {$videoUrl}");
-            } else {
-                $logger->info("URL validated successfully: {$videoUrl}");
-            }
-        } else {
-            $error = "No video file or URL provided.";
-            $logger->warning("No file or URL provided in request");
-        }
-        
-        // If no errors, insert into database
-        if (!$error) {
+        // Validate the URL
+        if (filter_var($videoUrl, FILTER_VALIDATE_URL)) {
             try {
-                $logger->info("Inserting video into database");
+                // Save initial entry to database
+                $videoData = [
+                    'source_type' => 'url',
+                    'video_url' => $videoUrl,
+                    'processing_status' => 'pending',
+                    'user_ip' => $_SERVER['REMOTE_ADDR'] ?? null
+                ];
                 
-                // Insert into database with status message
+                // Insert into database
+                $pdo = getDBConnection();
                 $stmt = $pdo->prepare("
                     INSERT INTO processed_videos 
-                    (source_type, source_path, video_url, processing_status, user_ip, download_progress, status_message) 
-                    VALUES (:source_type, :source_path, :video_url, 'pending', :user_ip, 0, :status_message)
+                    (source_type, video_url, processing_status, user_ip, created_at, updated_at) 
+                    VALUES (:source_type, :video_url, :processing_status, :user_ip, NOW(), NOW())
                 ");
-                
-                $statusMessage = $sourceType === 'upload' ? 'Upload complete, waiting for processing' : 'Waiting to start download';
-                
                 $stmt->execute([
-                    ':source_type' => $sourceType,
-                    ':source_path' => $sourcePath,
-                    ':video_url' => $videoUrl,
-                    ':user_ip' => $userIp,
-                    ':status_message' => $statusMessage
+                    ':source_type' => $videoData['source_type'],
+                    ':video_url' => $videoData['video_url'],
+                    ':processing_status' => $videoData['processing_status'],
+                    ':user_ip' => $videoData['user_ip']
                 ]);
                 
                 $videoId = $pdo->lastInsertId();
-                $success = true;
-                $logger->info("Video inserted into database with ID: {$videoId}");
                 
-                // If URL submission, process it immediately instead of queuing
-                if ($sourceType === 'url') {
-                    // Update status to "processing" for URLs
-                    $updateStmt = $pdo->prepare("
+                $processingLogger->info('Created database entry', ['video_id' => $videoId]);
+                
+                // Start the download process
+                updateVideoStatus($videoId, 'processing', 'Starting download...', 0);
+                $downloadResult = downloadVideo($videoUrl, $downloadLogger, $uploadsDir);
+                
+                if ($downloadResult['success']) {
+                    $videoFilePath = $downloadResult['file_path'];
+                    $processingLogger->info('Video downloaded successfully', [
+                        'video_id' => $videoId,
+                        'file_path' => $videoFilePath
+                    ]);
+                    
+                    // Update database with file path
+                    $stmt = $pdo->prepare("
                         UPDATE processed_videos 
-                        SET processing_status = 'processing',
-                            status_message = 'Starting download...'
+                        SET source_path = :source_path,
+                            status_message = 'Download complete. Starting AI analysis...',
+                            download_progress = 100,
+                            updated_at = NOW()
                         WHERE id = :id
                     ");
+                    $stmt->execute([
+                        ':source_path' => $videoFilePath,
+                        ':id' => $videoId
+                    ]);
                     
-                    $updateStmt->execute([':id' => $videoId]);
+                    $success = true;
                     $processingStatus = 'processing';
-                    
-                    // Load the VideoDownloader class
-                    if (file_exists(BASE_PATH . '/src/Utils/Services/VideoDownloader.php')) {
-                        require_once BASE_PATH . '/src/Utils/Services/VideoDownloader.php';
-                        
-                        // Try to download the video
-                        try {
-                            // Create VideoDownloader instance
-                            if (class_exists('\\Utils\\Services\\VideoDownloader')) {
-                                $downloader = new \Utils\Services\VideoDownloader($pdo);
-                                $logger->info("VideoDownloader class instantiated successfully");
-                            } else {
-                                throw new Exception("VideoDownloader class not found after including file");
-                            }
-                            
-                            // Start session for tracking progress
-                            if (session_status() === PHP_SESSION_NONE) {
-                                session_start();
-                            }
-                            $_SESSION['download_video_id'] = $videoId;
-                            
-                            // Redirect early to show the progress page
-                            if ($returnUrl && (strpos($returnUrl, '/') === 0)) {
-                                // Add the ID as a parameter to the return URL
-                                $separator = strpos($returnUrl, '?') !== false ? '&' : '?';
-                                
-                                // Clean output buffer before sending headers
-                                ob_clean();
-                                
-                                // Perform the redirect
-                                header("Location: {$returnUrl}{$separator}id={$videoId}");
-                                
-                                // After redirect, continue with download in the background
-                                ob_start();
-                                // Send headers to prevent client disconnection
-                                header('Connection: close');
-                                header('Content-Length: ' . ob_get_length());
-                                ob_end_flush();
-                                flush();
-                                
-                                // Now continue with the download process
-                                if (function_exists('fastcgi_finish_request')) {
-                                    fastcgi_finish_request();
-                                }
-                                
-                                // Now perform the download
-                                $result = $downloader->downloadVideo($videoId, $videoUrl);
-                                $logger->info("Download completed with status: " . $result['status']);
-                                
-                                exit;
-                            } else {
-                                // If no redirect, do the download synchronously
-                                $result = $downloader->downloadVideo($videoId, $videoUrl);
-                                $logger->info("Download completed with status: " . $result['status']);
-                            }
-                            
-                        } catch (Exception $e) {
-                            $logger->error("Error in video download: " . $e->getMessage());
-                            
-                            // Update status to failed
-                            $failStmt = $pdo->prepare("
-                                UPDATE processed_videos 
-                                SET processing_status = 'failed',
-                                    status_message = :message
-                                WHERE id = :id
-                            ");
-                            
-                            $failStmt->execute([
-                                ':id' => $videoId,
-                                ':message' => 'Download error: ' . $e->getMessage()
-                            ]);
-                        }
-                    } else {
-                        $logger->error("VideoDownloader class file not found");
-                        
-                        // Update status to failed
-                        $failStmt = $pdo->prepare("
-                            UPDATE processed_videos 
-                            SET processing_status = 'failed',
-                                status_message = :message
-                            WHERE id = :id
-                        ");
-                        
-                        $failStmt->execute([
-                            ':id' => $videoId,
-                            ':message' => 'Download error: VideoDownloader class not found'
-                        ]);
-                    }
+                    $statusMessage = 'Video downloaded. Starting AI analysis...';
                 } else {
-                    // For direct uploads, just update status to processing
-                    $updateStmt = $pdo->prepare("
-                        UPDATE processed_videos 
-                        SET processing_status = 'processing',
-                            status_message = 'Processing uploaded video'
-                        WHERE id = :id
-                    ");
+                    $error = $downloadResult['error'];
+                    $processingLogger->error('Download failed', [
+                        'video_id' => $videoId,
+                        'error' => $error
+                    ]);
                     
-                    $updateStmt->execute([':id' => $videoId]);
-                    $processingStatus = 'processing';
+                    // Update database with error
+                    updateVideoStatus($videoId, 'failed', $error, 0);
                 }
+            } catch (Exception $e) {
+                $error = "An unexpected error occurred: " . $e->getMessage();
+                $processingLogger->error('Exception during processing', [
+                    'message' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
                 
-                // If we have a return URL and it's a safe path, redirect with the video ID
-                if ($returnUrl && (strpos($returnUrl, '/') === 0)) {
-                    // Add the ID as a parameter to the return URL
-                    $separator = strpos($returnUrl, '?') !== false ? '&' : '?';
-                    
-                    // Clean output buffer before sending headers
-                    ob_clean();
-                    
-                    // Perform the redirect
-                    header("Location: {$returnUrl}{$separator}id={$videoId}");
-                    exit;
+                if (isset($videoId)) {
+                    updateVideoStatus($videoId, 'failed', $error, 0);
                 }
-                
-            } catch (PDOException $e) {
-                $logger->error("Database error during insert: " . $e->getMessage());
-                $error = "Database error: " . $e->getMessage();
             }
+        } else {
+            $error = "Invalid URL provided. Please enter a valid video URL.";
+            $processingLogger->warning('Invalid URL submitted: ' . $videoUrl);
         }
-    }
-    
-    // Check if this is a direct access with an ID
-    if (!$success && !$error && isset($_GET['id']) && is_numeric($_GET['id'])) {
-        $videoId = (int)$_GET['id'];
+    } elseif (!empty($_FILES['videoFile']) && $_FILES['videoFile']['error'] === UPLOAD_ERR_OK) {
+        // Process file upload
+        $processingLogger->info('Processing uploaded video file');
         
         try {
-            $stmt = $pdo->prepare("
-                SELECT * FROM processed_videos WHERE id = :id
-            ");
-            $stmt->execute([':id' => $videoId]);
-            $videoData = $stmt->fetch();
+            $uploadedFile = $_FILES['videoFile'];
+            $tmpName = $uploadedFile['tmp_name'];
+            $originalName = $uploadedFile['name'];
             
-            if ($videoData) {
-                $success = true;
-                $processingStatus = $videoData['processing_status'];
-                $statusMessage = $videoData['status_message'] ?? '';
-                $logger->info("Retrieved video data for ID: {$videoId}, Status: {$processingStatus}");
+            // Check file type
+            $allowedTypes = ['video/mp4', 'video/webm', 'video/avi', 'video/quicktime'];
+            $fileType = mime_content_type($tmpName);
+            
+            if (in_array($fileType, $allowedTypes)) {
+                // Generate a unique filename
+                $fileExtension = pathinfo($originalName, PATHINFO_EXTENSION);
+                $newFilename = uniqid('upload_') . '.' . $fileExtension;
+                $targetFilePath = $uploadsDir . '/' . $newFilename;
+                
+                // Ensure uploads directory exists
+                if (!file_exists($uploadsDir)) {
+                    mkdir($uploadsDir, 0755, true);
+                }
+                
+                // Move uploaded file
+                if (move_uploaded_file($tmpName, $targetFilePath)) {
+                    $processingLogger->info('File uploaded successfully', [
+                        'original_name' => $originalName,
+                        'saved_as' => $targetFilePath
+                    ]);
+                    
+                    // Save to database
+                    $videoData = [
+                        'source_type' => 'upload',
+                        'source_path' => $targetFilePath,
+                        'processing_status' => 'processing',
+                        'user_ip' => $_SERVER['REMOTE_ADDR'] ?? null
+                    ];
+                    
+                    // Insert into database
+                    $pdo = getDBConnection();
+                    $stmt = $pdo->prepare("
+                        INSERT INTO processed_videos 
+                        (source_type, source_path, processing_status, user_ip, created_at, updated_at, download_progress, status_message) 
+                        VALUES (:source_type, :source_path, :processing_status, :user_ip, NOW(), NOW(), 100, 'Upload complete. Starting AI analysis...')
+                    ");
+                    $stmt->execute([
+                        ':source_type' => $videoData['source_type'],
+                        ':source_path' => $videoData['source_path'],
+                        ':processing_status' => $videoData['processing_status'],
+                        ':user_ip' => $videoData['user_ip']
+                    ]);
+                    
+                    $videoId = $pdo->lastInsertId();
+                    $success = true;
+                    $processingStatus = 'processing';
+                    $statusMessage = 'Upload complete. Starting AI analysis...';
+                    
+                    $processingLogger->info('Created database entry for uploaded file', ['video_id' => $videoId]);
+                } else {
+                    $error = "Failed to move uploaded file.";
+                    $processingLogger->error('Failed to move uploaded file', [
+                        'from' => $tmpName,
+                        'to' => $targetFilePath
+                    ]);
+                }
             } else {
-                $error = "Video not found";
-                $logger->warning("Video not found with ID: {$videoId}");
+                $error = "Invalid file type. Please upload a video file.";
+                $processingLogger->warning('Invalid file type uploaded', [
+                    'type' => $fileType,
+                    'allowed' => implode(', ', $allowedTypes)
+                ]);
             }
-        } catch (PDOException $e) {
-            $logger->error("Error retrieving video data: " . $e->getMessage());
-            $error = "Error retrieving video data";
+        } catch (Exception $e) {
+            $error = "An error occurred processing the uploaded file: " . $e->getMessage();
+            $processingLogger->error('Exception during file upload', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
         }
+    } else {
+        $error = "No video URL or file provided.";
+        $processingLogger->warning('No video URL or file provided in request');
     }
+} elseif ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['id'])) {
+    // Check status of existing video
+    $videoId = (int)$_GET['id'];
+    $processingLogger->info('Checking status for video ID: ' . $videoId);
     
-    // If we have a video ID but no processing status yet, fetch the current status
-    if ($videoId && !$processingStatus) {
-        try {
-            $stmt = $pdo->prepare("
-                SELECT processing_status, status_message 
-                FROM processed_videos 
-                WHERE id = :id
-            ");
-            
-            $stmt->execute([':id' => $videoId]);
-            $result = $stmt->fetch();
-            
-            if ($result) {
-                $processingStatus = $result['processing_status'];
-                $statusMessage = $result['status_message'] ?? '';
-                $logger->info("Fetched processing status: {$processingStatus} for video ID: {$videoId}");
-            }
-        } catch (PDOException $e) {
-            $logger->error("Error checking status: " . $e->getMessage());
-            $error = "Error checking status: " . $e->getMessage();
-        }
+    $videoData = getVideoTask($videoId);
+    
+    if ($videoData) {
+        $processingStatus = $videoData['processing_status'] ?? 'pending';
+        $statusMessage = $videoData['status_message'] ?? '';
+        $success = true;
+        
+        $processingLogger->info('Retrieved video status', [
+            'video_id' => $videoId,
+            'status' => $processingStatus,
+            'message' => $statusMessage
+        ]);
+    } else {
+        $error = "Video not found.";
+        $processingLogger->warning('Video not found', ['video_id' => $videoId]);
     }
-} catch (Exception $e) {
-    $errorMsg = "Critical error: " . $e->getMessage();
-    basic_log($errorMsg, 'ERROR');
-    $error = $errorMsg;
 }
 
 // Ensure output buffer is clean before sending any content
@@ -515,187 +441,130 @@ if (ob_get_length()) ob_clean();
 
 <?php if ($success): ?>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const videoId = document.getElementById('video-id').value;
-    const progressBar = document.getElementById('progress-bar');
-    const statusMessage = document.getElementById('status-message');
-    const resultContainer = document.getElementById('result-container');
-    const resultContent = document.getElementById('result-content');
-
-    // Initial progress based on current status
-    let progress = <?php 
-        if ($processingStatus === 'pending') {
-            echo "10";
-        } elseif ($processingStatus === 'processing') {
-            echo "30";
-        } elseif ($processingStatus === 'completed') {
-            echo "100";
-        } elseif ($processingStatus === 'failed') {
-            echo "0";
-        } else {
-            echo "0";
+    document.addEventListener('DOMContentLoaded', function() {
+        const videoId = document.getElementById('video-id').value;
+        const progressBar = document.getElementById('progress-bar');
+        const statusMessage = document.getElementById('status-message');
+        const resultContainer = document.getElementById('result-container');
+        const resultContent = document.getElementById('result-content');
+        
+        let checkStatusInterval;
+        let failedAttempts = 0;
+        const maxFailedAttempts = 5;
+        
+        // Function to check processing status
+        function checkStatus() {
+            fetch(`/api/check-video-status?id=${videoId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Reset failed attempts counter on successful response
+                    failedAttempts = 0;
+                    
+                    // Update progress based on processing stage
+                    let progress = 0;
+                    
+                    if (data.processing_status === 'pending') {
+                        progress = 10;
+                    } else if (data.processing_status === 'processing') {
+                        // If download_progress is available, use it to calculate overall progress
+                        if (data.download_progress !== null) {
+                            // Scale download progress from 0-100 to 10-50
+                            progress = 10 + (data.download_progress * 0.4);
+                        } else {
+                            // Default progress for processing state
+                            progress = 50;
+                        }
+                    } else if (data.processing_status === 'completed') {
+                        progress = 100;
+                        
+                        // Display results if available
+                        if (data.result_data) {
+                            resultContainer.classList.remove('hidden');
+                            resultContent.innerHTML = formatResults(data.result_data);
+                        }
+                        
+                        // Stop checking status
+                        clearInterval(checkStatusInterval);
+                    } else if (data.processing_status === 'failed') {
+                        // Show error message and stop checking
+                        statusMessage.textContent = data.status_message || 'Processing failed';
+                        statusMessage.classList.add('text-red-400');
+                        clearInterval(checkStatusInterval);
+                        return;
+                    }
+                    
+                    // Update progress bar
+                    progressBar.style.width = `${progress}%`;
+                    
+                    // Update status message
+                    if (data.status_message) {
+                        statusMessage.textContent = data.status_message;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking status:', error);
+                    
+                    // Increment failed attempts
+                    failedAttempts++;
+                    
+                    // If too many failures, stop checking
+                    if (failedAttempts >= maxFailedAttempts) {
+                        statusMessage.textContent = 'Error checking status. Please refresh the page.';
+                        statusMessage.classList.add('text-red-400');
+                        clearInterval(checkStatusInterval);
+                    }
+                });
         }
-    ?>;
-
-    // Apply initial progress
-    updateProgressBar(progress);
-
-    // Setup tracking variables
-    let failedAttempts = 0;
-    const MAX_FAILED_ATTEMPTS = 5;
-    
-    // Check status periodically
-    const checkInterval = setInterval(checkStatus, 3000);
-
-    // Try to fetch status using the given URL
-    function fetchWithUrl(url) {
-        const timestamp = new Date().getTime();
-        const fullUrl = `${url}?id=${videoId}&t=${timestamp}`;
         
-        console.log(`Trying URL: ${fullUrl}`);
-        
-        return fetch(fullUrl, {
-            method: 'GET',
-            headers: {
-                'Accept': 'application/json',
-                'Cache-Control': 'no-cache'
-            },
-            credentials: 'same-origin'
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`Server responded with status: ${response.status}`);
-            }
-            return response.json();
-        });
-    }
-
-    // Main status checking function
-    function checkStatus() {
-        // List of URLs to try in order
-        const urls = [
-            '/utils/tagVideoThroughUrl/check-processing-status.php',
-            '/src/Utils/tagVideoThroughUrl/check-processing-status.php'
-        ];
-        
-        // Try URLs one by one
-        tryNextUrl(urls, 0);
-    }
-
-    // Recursively try URLs until one succeeds or all fail
-    function tryNextUrl(urls, index) {
-        // If we've tried all URLs without success
-        if (index >= urls.length) {
-            failedAttempts++;
-            console.error(`All ${urls.length} URLs failed. Attempt ${failedAttempts} of ${MAX_FAILED_ATTEMPTS}`);
+        // Format results for display
+        function formatResults(data) {
+            if (!data) return '<p>No results available</p>';
             
-            // If we've failed too many times, switch to simulation mode
-            if (failedAttempts >= MAX_FAILED_ATTEMPTS) {
-                console.log("Switching to simulation mode due to repeated failures");
-                simulateProgress();
-            } else {
-                statusMessage.textContent = "Checking status... (retry soon)";
-            }
-            return;
-        }
-
-        // Try the current URL
-        fetchWithUrl(urls[index])
-            .then(data => {
-                console.log("Got data:", data);
-                failedAttempts = 0; // Reset counter on success
-                handleStatusUpdate(data);
-            })
-            .catch(error => {
-                // Log the error for debugging
-                console.error(`Failed with URL ${urls[index]}:`, error);
+            // Build HTML for results
+            let html = '<div class="space-y-4">';
+            
+            // Display performers if available
+            if (data.performers && data.performers.length > 0) {
+                html += `<div class="mb-4">
+                    <h4 class="font-medium text-secondary mb-2">Detected Performers:</h4>
+                    <div class="flex flex-wrap gap-2">`;
                 
-                // Try the next URL in the list
-                tryNextUrl(urls, index + 1);
-            });
-    }
-
-    // Simulate progress when we can't connect to the server
-    function simulateProgress() {
-        if (progress < 100) {
-            progress += Math.random() * 5 + 3; // Add 3-8% each time
-            progress = Math.min(progress, 99); // Never reach 100% with simulation
-            
-            updateProgressBar(progress);
-            statusMessage.textContent = "Processing your video... (Connection limited mode)";
-        }
-    }
-
-    // Process status updates
-    function handleStatusUpdate(data) {
-        if (data.status === 'processing') {
-            // Update progress based on server data or increment slightly
-            if (data.progress) {
-                progress = data.progress;
-            } else if (progress < 70) {
-                progress += 5;
-            }
-            
-            updateProgressBar(progress);
-            
-            // Update status message
-            if (data.message) {
-                statusMessage.textContent = data.message;
-            } else {
-                statusMessage.textContent = "AI is analyzing your video...";
-            }
-        } 
-        else if (data.status === 'completed') {
-            // Mark as complete
-            progress = 100;
-            updateProgressBar(progress);
-            statusMessage.textContent = "Analysis complete!";
-            clearInterval(checkInterval);
-            
-            // Show results if available
-            showResults(data.results);
-        } 
-        else if (data.status === 'failed') {
-            // Show failure message
-            statusMessage.textContent = data.message || "Processing failed. Please try again.";
-            clearInterval(checkInterval);
-        }
-    }
-
-    // Update progress bar width
-    function updateProgressBar(value) {
-        progressBar.style.width = `${value}%`;
-    }
-
-    // Display results in the UI
-    function showResults(results) {
-        if (results) {
-            resultContainer.classList.remove('hidden');
-            
-            let htmlContent = '';
-            
-            // Add performers section if available
-            if (results.performers && results.performers.length > 0) {
-                htmlContent += '<div class="mb-4"><h4 class="text-md font-medium text-secondary mb-2">Detected Performers:</h4><ul class="list-disc list-inside space-y-1">';
-                results.performers.forEach(performer => {
-                    htmlContent += `<li>${performer.name} <span class="text-gray-400">(${performer.confidence}% confidence)</span></li>`;
+                data.performers.forEach(performer => {
+                    html += `<span class="px-2 py-1 bg-secondary/20 text-secondary rounded-full text-xs">
+                        ${performer.name} (${performer.confidence.toFixed(2)}%)
+                    </span>`;
                 });
-                htmlContent += '</ul></div>';
+                
+                html += `</div></div>`;
             }
             
-            // Add tags section if available
-            if (results.tags && results.tags.length > 0) {
-                htmlContent += '<div><h4 class="text-md font-medium text-secondary mb-2">Detected Tags:</h4><div class="flex flex-wrap gap-2">';
-                results.tags.forEach(tag => {
-                    htmlContent += `<span class="px-2 py-1 text-xs rounded-full bg-secondary/20 border border-secondary text-secondary">${tag}</span>`;
+            // Display tags if available
+            if (data.tags && data.tags.length > 0) {
+                html += `<div>
+                    <h4 class="font-medium text-secondary mb-2">Content Tags:</h4>
+                    <div class="flex flex-wrap gap-2">`;
+                
+                data.tags.forEach(tag => {
+                    html += `<span class="px-2 py-1 bg-tertery/20 text-tertery rounded-full text-xs">
+                        ${tag.name} (${tag.confidence.toFixed(2)}%)
+                    </span>`;
                 });
-                htmlContent += '</div></div>';
+                
+                html += `</div></div>`;
             }
             
-            // Update the content or show a message if no data
-            resultContent.innerHTML = htmlContent || 'No results available';
+            html += '</div>';
+            return html;
         }
-    }
-});
+        
+        // Start checking status periodically
+        checkStatus(); // Check immediately once
+        checkStatusInterval = setInterval(checkStatus, 3000); // Then check every 3 seconds
+    });
 </script>
 <?php endif; ?>

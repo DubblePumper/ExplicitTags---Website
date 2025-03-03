@@ -1,10 +1,25 @@
-[2025-03-02 11:55:40] [INFO] VideoDownloader initialized. Upload directory: /var/www/html/storage/uploads/videos/
-[2025-03-02 11:55:40] [DEBUG] Status updated for video ID 72: processing, Initializing download..., Progress: %
-[2025-03-02 11:55:40] [INFO] Starting download for video ID 72 from URL: https://nl.pornhub.com/view_video.php?viewkey=ph62aab0917d335
-[2025-03-02 11:55:40] [DEBUG] Target file path: /var/www/html/storage/uploads/videos/video_67c4473c4c82e.mp4
-[2025-03-02 11:55:40] [DEBUG] Status updated for video ID 72: processing, Preparing to download video..., Progress: 10%
-[2025-03-02 12:08:05] [INFO] VideoDownloader initialized. Upload directory: /var/www/html/storage/uploads/videos/
-[2025-03-02 12:08:05] [DEBUG] Status updated for video ID 73: processing, Initializing download..., Progress: %
-[2025-03-02 12:08:05] [INFO] Starting download for video ID 73 from URL: https://nl.pornhub.com/view_video.php?viewkey=ph62aab0917d335
-[2025-03-02 12:08:05] [DEBUG] Target file path: /var/www/html/storage/uploads/videos/video_67c44a25c8935.mp4
-[2025-03-02 12:08:05] [DEBUG] Status updated for video ID 73: processing, Preparing to download video..., Progress: 10%
+[2025-03-03T13:55:32.122723+00:00] video_downloader.INFO: Starting download process for URL: https://nl.pornhub.com/view_video.php?viewkey=6697a0066f68d [] []
+[2025-03-03T13:55:32.125608+00:00] video_downloader.INFO: Using binary at: /var/www/html/vendor/yt-dlp_linux [] []
+[2025-03-03T14:16:03.873462+00:00] video_downloader.INFO: Starting download process for URL: https://nl.pornhub.com/view_video.php?viewkey=6697a0066f68d [] []
+[2025-03-03T14:16:03.875753+00:00] video_downloader.INFO: Using binary at: /var/www/html/vendor/yt-dlp_linux [] []
+[2025-03-03T14:16:03.994569+00:00] video_downloader.INFO: Starting download with options {"format":"best[height<=720]","output":"%(id)s.%(ext)s","download_path":"/var/www/html/storage/uploads/videos"} []
+[2025-03-03T14:16:50.640356+00:00] video_downloader.INFO: Download completed successfully {"file_path":"/var/www/html/storage/uploads/videos/6697a0066f68d.mp4"} []
+[2025-03-03T14:34:20.534221+00:00] video_downloader.INFO: Starting download process for URL: https://nl.pornhub.com/view_video.php?viewkey=6697a0066f68d [] []
+[2025-03-03T14:34:20.536371+00:00] video_downloader.INFO: Using binary at: /var/www/html/vendor/yt-dlp_linux [] []
+[2025-03-03T14:34:20.860874+00:00] video_downloader.ERROR: General error: Providing download path via `output` option is prohibited. Set the download path when creating Options object or calling `downloadPath` method. [] []
+[2025-03-03T14:48:06.511459+00:00] video_downloader.INFO: Starting download process for URL: https://nl.pornhub.com/view_video.php?viewkey=6697a0066f68d [] []
+[2025-03-03T14:48:06.513722+00:00] video_downloader.INFO: Using binary at: /var/www/html/vendor/yt-dlp_linux [] []
+[2025-03-03T14:48:06.822315+00:00] video_downloader.INFO: Starting download with progress tracking [] []
+[2025-03-03T14:56:22.882005+00:00] video_downloader.INFO: Starting download process for URL: https://nl.pornhub.com/view_video.php?viewkey=6697a0066f68d [] []
+[2025-03-03T14:56:22.884108+00:00] video_downloader.INFO: Using binary at: /var/www/html/vendor/yt-dlp_linux [] []
+[2025-03-03T14:56:22.979043+00:00] video_downloader.INFO: Starting download with options {"format":"best[height<=720]","output":"%(id)s.%(ext)s","download_path":"/var/www/html/storage/uploads/videos"} []
+[2025-03-03T14:56:27.443197+00:00] video_downloader.INFO: Download completed successfully {"file_path":{"SplFileInfo":"/var/www/html/storage/uploads/videos/6697a0066f68d.mp4"}} []
+--------------
+[2025-03-03T14:57:32.666175+00:00] video_downloader.INFO: Starting download process for URL: https://nl.pornhub.com/view_video.php?viewkey=6697a0066f68d [] []
+[2025-03-03T14:57:32.668428+00:00] video_downloader.INFO: Using binary at: /var/www/html/vendor/yt-dlp_linux [] []
+[2025-03-03T14:57:32.765786+00:00] video_downloader.INFO: Starting download with options {"format":"best[height<=720]","output":"%(id)s.%(ext)s","download_path":"/var/www/html/storage/uploads/videos"} []
+[2025-03-03T14:57:37.182097+00:00] video_downloader.INFO: Download completed successfully {"file_path":{"SplFileInfo":"/var/www/html/storage/uploads/videos/6697a0066f68d.mp4"}} []
+---[2025-03-03T14:58:40.519179+00:00] video_downloader.INFO: Starting download process for URL: https://nl.pornhub.com/view_video.php?viewkey=6697a0066f68d [] []
+[2025-03-03T14:58:40.521504+00:00] video_downloader.INFO: Using binary at: /var/www/html/vendor/yt-dlp_linux [] []
+[2025-03-03T14:58:40.627675+00:00] video_downloader.INFO: Starting download with options {"format":"best[height<=720]","output":"%(id)s.%(ext)s","download_path":"/var/www/html/storage/uploads/videos"} []
+[2025-03-03T14:59:31.847548+00:00] video_downloader.INFO: Download completed successfully {"file_path":{"SplFileInfo":"/var/www/html/storage/uploads/videos/6697a0066f68d.mp4"}} []

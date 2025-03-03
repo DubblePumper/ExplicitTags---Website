@@ -44,6 +44,10 @@ class ComposerStaticInit2192ddd85a5a271e8153fe2be3b0250b
             'Psr\\Container\\' => 14,
             'Psr\\Cache\\' => 10,
         ),
+        'M' => 
+        array (
+            'Monolog\\' => 8,
+        ),
         'F' => 
         array (
             'FFMpeg\\' => 7,
@@ -126,6 +130,10 @@ class ComposerStaticInit2192ddd85a5a271e8153fe2be3b0250b
         'Psr\\Cache\\' => 
         array (
             0 => __DIR__ . '/..' . '/psr/cache/src',
+        ),
+        'Monolog\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/monolog/monolog/src/Monolog',
         ),
         'FFMpeg\\' => 
         array (

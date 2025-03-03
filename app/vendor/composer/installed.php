@@ -3,7 +3,7 @@
         'name' => 'sander/ai_analyser_website',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => '07d83a10e504650b04a18a9dc91ad0c3f2741814',
+        'reference' => '4d99e7320d77b941dab9b25f020c593c026db48a',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -16,6 +16,15 @@
             'reference' => '0a16b0d71ab13284339abb99d9d2bd813640efbc',
             'type' => 'library',
             'install_path' => __DIR__ . '/../evenement/evenement',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'monolog/monolog' => array(
+            'pretty_version' => '3.8.1',
+            'version' => '3.8.1.0',
+            'reference' => 'aef6ee73a77a66e404dd6540934a9ef1b3c855b4',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../monolog/monolog',
             'aliases' => array(),
             'dev_requirement' => false,
         ),
@@ -72,6 +81,12 @@
             'aliases' => array(),
             'dev_requirement' => false,
         ),
+        'psr/log-implementation' => array(
+            'dev_requirement' => false,
+            'provided' => array(
+                0 => '3.0.0',
+            ),
+        ),
         'psr/simple-cache-implementation' => array(
             'dev_requirement' => false,
             'provided' => array(
@@ -81,7 +96,7 @@
         'sander/ai_analyser_website' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => '07d83a10e504650b04a18a9dc91ad0c3f2741814',
+            'reference' => '4d99e7320d77b941dab9b25f020c593c026db48a',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
