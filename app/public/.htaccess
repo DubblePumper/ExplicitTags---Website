@@ -9,18 +9,9 @@ RewriteBase /
 # Zorg ervoor dat CSS correct wordt geserveerd
 AddType text/css .css
 
-# Add proper MIME types for video files
-AddType video/mp4 .mp4
-AddType video/webm .webm
-AddType video/ogg .ogv
-
 # Statische bestanden uitsluiten van rewrites
 RewriteCond %{REQUEST_URI} !^/assets/ [NC]
 RewriteRule ^assets/(.*)$ assets/$1 [L,NC]
-
-# Exclude video directories from rewrites
-RewriteCond %{REQUEST_URI} !^/videos/ [NC]
-RewriteRule ^videos/(.*)$ videos/$1 [L,NC]
 
 # Redirect www naar non-www
 RewriteCond %{HTTP_HOST} ^www\.explicittags\.com [NC]
@@ -45,17 +36,26 @@ Header always set Referrer-Policy "strict-origin-when-cross-origin"
 # Enable CORS for SSE
 Header always set Access-Control-Allow-Origin "https://explicittags.com"
 Header always set Access-Control-Allow-Methods "GET, POST, OPTIONS"
-Header always set Access-Control-Allow-Headers "Content-Type, Range"
-Header always set Access-Control-Expose-Headers "Content-Length, Accept-Ranges, Content-Range"
-
-# Handle video streaming properly
-<FilesMatch "\.(mp4|webm|ogv)$">
-    Header set Accept-Ranges bytes
-</FilesMatch>
+Header always set Access-Control-Allow-Headers "Content-Type"
 
 # Handle EventSource CORS specifiek
 <FilesMatch "performers_sse\.php$">
     Header always set Cache-Control "no-cache"
+    Header always set Content-Type "text/event-stream"
+</FilesMatch>
+
+# Handle index path
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^index$ index.php [L]
+
+# Remove file extensions from URLs
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME}\.(php|html|htm) -f
+RewriteRule ^(.*)$ $1 [L]
+
+# Map requests van /pages naar de juiste directory
+RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^([^/]+)$ pages/$1 [L]
 
