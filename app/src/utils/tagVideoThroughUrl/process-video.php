@@ -49,9 +49,34 @@ $downloadLogger->pushHandler(new StreamHandler($logDir . '/video_downloader.log'
 $processingLogger = new Logger('video_processing');
 $processingLogger->pushHandler(new StreamHandler($logDir . '/video_processing.log', Logger::DEBUG));
 
+/**
+ * Extract viewkey from URL
+ * 
+ * @param string $url URL to extract viewkey from
+ * @return string Extracted viewkey or '0' if not found
+ */
+function extractViewkey($url) {
+    $viewkey = '0';
+    
+    // Extract from common patterns
+    if (preg_match('/[?&]viewkey=([^&]+)/', $url, $matches)) {
+        $viewkey = $matches[1];
+    } elseif (preg_match('/\/([a-z0-9]+)(?:\/|\.|$)/', $url, $matches)) {
+        $viewkey = $matches[1];
+    }
+    
+    // Remove any invalid characters
+    $viewkey = preg_replace('/[^a-z0-9_-]/', '', $viewkey);
+    
+    return $viewkey ?: '0';
+}
+
 // Function to download video
-function downloadVideo($url, $downloadLogger, $uploadsDir) {
+function downloadVideo($url, $downloadLogger, $uploadsDir, $videoId = null) {
     try {
+        // Extract viewkey from URL
+        $viewkey = extractViewkey($url);
+        
         // Configure youtube-dl
         $binPath = BASE_PATH . '/vendor/yt-dlp_linux';
         if (PHP_OS_FAMILY === 'Windows') {
@@ -65,35 +90,41 @@ function downloadVideo($url, $downloadLogger, $uploadsDir) {
             throw new ExecutableNotFoundException('yt-dlp binary not found at: ' . $binPath);
         }
 
+        // Generate unique ID part of filename
+        $uniqueId = uniqid();
+        
+        // Define custom filename format with extension placeholder: video_{$videoId}_{$viewkey}_{$uniqueId}.%(ext)s
+        $customFileName = "video_{$videoId}_{$viewkey}_{$uniqueId}.%(ext)s";
+        
+        $downloadLogger->info('Using custom filename format', [
+            'format' => $customFileName,
+            'video_id' => $videoId,
+            'viewkey' => $viewkey,
+            'unique_id' => $uniqueId
+        ]);
+
         // Create YoutubeDl instance
         $youtubeDl = new YoutubeDl();
         $youtubeDl->setBinPath($binPath);
         
-        // Create options using fluent interface
+        // Create options using fluent interface - CORRECT WAY TO SET DOWNLOAD PATH
         $options = Options::create()
-            ->downloadPath($uploadsDir)
+            ->downloadPath($uploadsDir)     // Set download path first
+            ->output($customFileName)        // Set filename with extension placeholder
             ->format('best[height<=720]')
-            ->output('%(id)s.%(ext)s')
             ->noCheckCertificate(true)
-            ->noPlaylist();
+            ->noPlaylist()
+            ->url($url);
         
         $downloadLogger->info('Starting download with options', [
             'format' => 'best[height<=720]', 
-            'output' => '%(id)s.%(ext)s',
+            'output' => $customFileName,
             'download_path' => $uploadsDir
         ]);
         
         // Download the video
-        // Download the video with options
-        $video = $youtubeDl->download(
-            Options::create()
-                ->downloadPath($uploadsDir)
-                ->format('best[height<=720]')
-                ->output('%(id)s.%(ext)s')
-                ->noCheckCertificate(true)
-                ->noPlaylist()
-                ->url($url)
-        );
+        $video = $youtubeDl->download($options);
+        
         // Get the video information
         $videos = $video->getVideos();
         
@@ -102,12 +133,41 @@ function downloadVideo($url, $downloadLogger, $uploadsDir) {
         }
         
         $videoFilePath = $videos[0]->getFile();
+        
+        // If file not found, try to find it by pattern
+        if (!$videoFilePath || !file_exists($videoFilePath)) {
+            $expectedFilePattern = $uploadsDir . "/video_{$videoId}_{$viewkey}_{$uniqueId}.*";
+            $matchingFiles = glob($expectedFilePattern);
+            
+            if (!empty($matchingFiles)) {
+                $videoFilePath = $matchingFiles[0];
+            } else {
+                // Final fallback: get latest file in directory
+                $files = glob($uploadsDir . '/*');
+                if (!empty($files)) {
+                    $latestFile = null;
+                    $latestTime = 0;
+                    
+                    foreach ($files as $file) {
+                        $fileTime = filemtime($file);
+                        if ($fileTime > $latestTime) {
+                            $latestTime = $fileTime;
+                            $latestFile = $file;
+                        }
+                    }
+                    
+                    $videoFilePath = $latestFile;
+                }
+            }
+        }
+        
         $downloadLogger->info('Download completed successfully', ['file_path' => $videoFilePath]);
         
         return [
             'success' => true,
             'file_path' => $videoFilePath,
-            'info' => $video->getVideos()[0]->getTitle()
+            'info' => $videos[0]->getTitle(),
+            'viewkey' => $viewkey
         ];
     } catch (ExecutableNotFoundException $e) {
         $downloadLogger->error('Executable not found: ' . $e->getMessage());
@@ -184,7 +244,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 // Start the download process
                 updateVideoStatus($videoId, 'processing', 'Starting download...', 0);
-                $downloadResult = downloadVideo($videoUrl, $downloadLogger, $uploadsDir);
+                
+                // Pass videoId to the downloadVideo function
+                $downloadResult = downloadVideo($videoUrl, $downloadLogger, $uploadsDir, $videoId);
                 
                 if ($downloadResult['success']) {
                     $videoFilePath = $downloadResult['file_path'];
@@ -193,17 +255,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'file_path' => $videoFilePath
                     ]);
                     
+                    // Store viewkey in database along with file path
+                    $viewkey = $downloadResult['viewkey'] ?? extractViewkey($videoUrl);
+                    
                     // Update database with file path
                     $stmt = $pdo->prepare("
                         UPDATE processed_videos 
                         SET source_path = :source_path,
                             status_message = 'Download complete. Starting AI analysis...',
                             download_progress = 100,
+                            viewkey = :viewkey,
                             updated_at = NOW()
                         WHERE id = :id
                     ");
                     $stmt->execute([
                         ':source_path' => $videoFilePath,
+                        ':viewkey' => $viewkey,
                         ':id' => $videoId
                     ]);
                     
@@ -249,9 +316,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $fileType = mime_content_type($tmpName);
             
             if (in_array($fileType, $allowedTypes)) {
-                // Generate a unique filename
+                // Save to database first to get an ID
+                $videoData = [
+                    'source_type' => 'upload',
+                    'processing_status' => 'pending',
+                    'user_ip' => $_SERVER['REMOTE_ADDR'] ?? null
+                ];
+                
+                // Insert into database
+                $pdo = getDBConnection();
+                $stmt = $pdo->prepare("
+                    INSERT INTO processed_videos 
+                    (source_type, processing_status, user_ip, created_at, updated_at) 
+                    VALUES (:source_type, :processing_status, :user_ip, NOW(), NOW())
+                ");
+                $stmt->execute([
+                    ':source_type' => $videoData['source_type'],
+                    ':processing_status' => $videoData['processing_status'],
+                    ':user_ip' => $videoData['user_ip']
+                ]);
+                
+                $videoId = $pdo->lastInsertId();
+                
+                // Generate a unique filename using the required format
                 $fileExtension = pathinfo($originalName, PATHINFO_EXTENSION);
-                $newFilename = uniqid('upload_') . '.' . $fileExtension;
+                $uniqueId = uniqid();
+                $newFilename = "video_{$videoId}_0_{$uniqueId}.{$fileExtension}";
                 $targetFilePath = $uploadsDir . '/' . $newFilename;
                 
                 // Ensure uploads directory exists
@@ -266,29 +356,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'saved_as' => $targetFilePath
                     ]);
                     
-                    // Save to database
-                    $videoData = [
-                        'source_type' => 'upload',
-                        'source_path' => $targetFilePath,
-                        'processing_status' => 'processing',
-                        'user_ip' => $_SERVER['REMOTE_ADDR'] ?? null
-                    ];
-                    
-                    // Insert into database
-                    $pdo = getDBConnection();
+                    // Update database with file path
                     $stmt = $pdo->prepare("
-                        INSERT INTO processed_videos 
-                        (source_type, source_path, processing_status, user_ip, created_at, updated_at, download_progress, status_message) 
-                        VALUES (:source_type, :source_path, :processing_status, :user_ip, NOW(), NOW(), 100, 'Upload complete. Starting AI analysis...')
+                        UPDATE processed_videos 
+                        SET source_path = :source_path,
+                            status_message = 'Upload complete. Starting AI analysis...',
+                            processing_status = 'processing',
+                            download_progress = 100,
+                            updated_at = NOW()
+                        WHERE id = :id
                     ");
                     $stmt->execute([
-                        ':source_type' => $videoData['source_type'],
-                        ':source_path' => $videoData['source_path'],
-                        ':processing_status' => $videoData['processing_status'],
-                        ':user_ip' => $videoData['user_ip']
+                        ':source_path' => $targetFilePath,
+                        ':id' => $videoId
                     ]);
                     
-                    $videoId = $pdo->lastInsertId();
                     $success = true;
                     $processingStatus = 'processing';
                     $statusMessage = 'Upload complete. Starting AI analysis...';
@@ -300,6 +382,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'from' => $tmpName,
                         'to' => $targetFilePath
                     ]);
+                    
+                    // Update database with error
+                    updateVideoStatus($videoId, 'failed', $error, 0);
                 }
             } else {
                 $error = "Invalid file type. Please upload a video file.";
@@ -314,6 +399,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
+            
+            if (isset($videoId)) {
+                updateVideoStatus($videoId, 'failed', $error, 0);
+            }
         }
     } else {
         $error = "No video URL or file provided.";

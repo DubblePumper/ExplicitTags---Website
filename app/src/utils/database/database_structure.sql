@@ -87,6 +87,7 @@ CREATE TABLE IF NOT EXISTS `processed_videos` (
   `id` int NOT NULL AUTO_INCREMENT,
   `source_type` enum('url','upload') NOT NULL,
   `source_path` varchar(255) DEFAULT '',
+  `viewkey`VARCHAR(50) DEFAULT '0'
   `video_url` text,
   `processing_status` enum('pending','processing','completed','failed') DEFAULT 'pending',
   `result_data` json DEFAULT NULL,

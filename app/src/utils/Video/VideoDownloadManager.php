@@ -74,13 +74,36 @@ class VideoDownloadManager {
     }
     
     /**
+     * Extract viewkey from a URL
+     * 
+     * @param string $url URL to extract viewkey from
+     * @return string Extracted viewkey or '0' if not found
+     */
+    private function extractViewkey(string $url): string {
+        $viewkey = '0';
+        
+        // Extract from common patterns
+        if (preg_match('/[?&]viewkey=([^&]+)/', $url, $matches)) {
+            $viewkey = $matches[1];
+        } elseif (preg_match('/\/([a-z0-9]+)(?:\/|\.|$)/', $url, $matches)) {
+            $viewkey = $matches[1];
+        }
+        
+        // Remove any invalid characters
+        $viewkey = preg_replace('/[^a-z0-9_-]/', '', $viewkey);
+        
+        return $viewkey ?: '0';
+    }
+    
+    /**
      * Download a video from a supported website
      * 
      * @param string $url URL of the video to download
      * @param array $customOptions Additional options for youtube-dl
+     * @param int|null $videoId ID from processed_videos table
      * @return array Result information including download status and file path
      */
-    public function downloadVideo(string $url, array $customOptions = []): array {
+    public function downloadVideo(string $url, array $customOptions = [], ?int $videoId = null): array {
         try {
             // Check if binary exists
             if (!file_exists($this->binPath)) {
@@ -92,9 +115,31 @@ class VideoDownloadManager {
                 'binary' => $this->binPath
             ]);
             
-            // Create Options object using factory method
+            // Extract viewkey from URL
+            $viewkey = $this->extractViewkey($url);
+            
+            // Generate unique ID
+            $uniqueId = uniqid();
+            
+            // Set default videoId if not provided
+            if (!$videoId) {
+                $videoId = time(); // Use timestamp as fallback
+            }
+            
+            // Define custom filename format with extension placeholder: video_{$videoId}_{$viewkey}_{$uniqueId}.%(ext)s
+            $customFileName = "video_{$videoId}_{$viewkey}_{$uniqueId}.%(ext)s";
+            
+            $this->logger->info('Using custom filename format', [
+                'format' => $customFileName,
+                'video_id' => $videoId,
+                'viewkey' => $viewkey,
+                'unique_id' => $uniqueId
+            ]);
+            
+            // Create Options object using factory method - FIXED VERSION
             $options = Options::create()
-                ->output($this->downloadPath . '/%(id)s.%(ext)s')
+                ->downloadPath($this->downloadPath)  // Set download path first
+                ->output($customFileName)            // Set filename with extension placeholder
                 ->format('best[height<=720]')
                 ->noCheckCertificate(true)
                 ->noPlaylist();
@@ -109,7 +154,7 @@ class VideoDownloadManager {
             $this->logger->info('Configured download options', [
                 'download_path' => $this->downloadPath,
                 'format' => 'best[height<=720]',
-                'output' => '%(id)s.%(ext)s'
+                'output' => $customFileName
             ]);
             
             // Configure youtube-dl
@@ -126,29 +171,35 @@ class VideoDownloadManager {
             
             $videoInfo = $collection->getVideos()[0];
             
-            // Get file path from download path and filename or ID
-            $filename = $videoInfo->getFilename() ?? $videoInfo->getId() . '.' . $this->getExtensionFromFormat($videoInfo->getFormat());
-            $videoFilePath = rtrim($this->downloadPath, '/') . '/' . $filename;
+            // Try to get file path from downloaded video
+            $videoFilePath = $videoInfo->getFile();
             
-            // Check if the file exists
-            if (!file_exists($videoFilePath)) {
-                // Try to find any newly created video file in the download directory
-                $files = glob($this->downloadPath . '/*');
-                $latestFile = null;
-                $latestTime = 0;
+            // If file not found, try to find it by pattern
+            if (!$videoFilePath || !file_exists($videoFilePath)) {
+                $expectedFilePattern = $this->downloadPath . "/video_{$videoId}_{$viewkey}_{$uniqueId}.*";
+                $matchingFiles = glob($expectedFilePattern);
                 
-                foreach ($files as $file) {
-                    $fileTime = filemtime($file);
-                    if ($fileTime > $latestTime) {
-                        $latestTime = $fileTime;
-                        $latestFile = $file;
-                    }
-                }
-                
-                if ($latestFile && is_file($latestFile)) {
-                    $videoFilePath = $latestFile;
+                if (!empty($matchingFiles)) {
+                    $videoFilePath = $matchingFiles[0];
                 } else {
-                    throw new Exception("Downloaded file not found in output directory");
+                    // Final fallback: get latest file in directory
+                    $files = glob($this->downloadPath . '/*');
+                    if (!empty($files)) {
+                        $latestFile = null;
+                        $latestTime = 0;
+                        
+                        foreach ($files as $file) {
+                            $fileTime = filemtime($file);
+                            if ($fileTime > $latestTime) {
+                                $latestTime = $fileTime;
+                                $latestFile = $file;
+                            }
+                        }
+                        
+                        $videoFilePath = $latestFile;
+                    } else {
+                        throw new Exception("Downloaded file not found in output directory");
+                    }
                 }
             }
             
@@ -166,6 +217,7 @@ class VideoDownloadManager {
                 'duration' => $videoInfo->getDuration(),
                 'thumbnail' => $this->extractThumbnailUrl($videoInfo),
                 'description' => $videoInfo->getDescription(),
+                'viewkey' => $viewkey,
                 'info' => $videoInfo
             ];
             
@@ -245,17 +297,17 @@ class VideoDownloadManager {
             
             $this->logger->info('Fetching video info for URL', ['url' => $url]);
             
-            // Create options for info only using factory method
+            // Create options for info only using factory method - FIXED VERSION
             $options = Options::create()
                 ->skipDownload(true)
                 ->noCheckCertificate(true)
-                ->noPlaylist();
+                ->noPlaylist()
+                ->url($url);
             
             $youtubeDl = new YoutubeDl();
             $youtubeDl->setBinPath($this->binPath);
             
-            // First parameter is URL, second is options
-            $options->url($url);
+            // Download (just metadata) with options
             $collection = $youtubeDl->download($options);
             $videos = $collection->getVideos();
             
