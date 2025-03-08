@@ -3,7 +3,7 @@
 define('BASE_PATH', dirname(__DIR__, 2));
 
 // Include necessary files from the new structure
-require_once BASE_PATH . '/src/Includes/include-all.php';
+require_once BASE_PATH . '/src/includes/include-all.php';
 
 // Get a random gradient class for styling
 
@@ -161,7 +161,7 @@ $gradientClass = "bg-gradient-to-r {$gradient['from']} {$gradient['to']} bg-clip
             </div>
         </form>
     </main>
-    <?php include_once BASE_PATH . '/src/Includes/scripts.php'; ?>
+    <?php include_once BASE_PATH . '/src/includes/scripts.php'; ?>
         <!-- Add global variables -->
         <script>
         window.APP_VERSION = '<?php echo time(); ?>';

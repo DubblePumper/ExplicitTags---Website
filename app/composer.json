@@ -6,11 +6,11 @@
   "autoload": {
     "psr-4": {
       "Sander\\AiAnalyserWebsite\\": "src/",
-      "Utils\\Services\\": "src/Utils/Services/",
-      "Utils\\": "src/Utils/"
+      "Utils\\Services\\": "src/utils/Services/",
+      "Utils\\": "src/utils/"
     },
     "files": [
-      "src/Utils/tagVideoThroughUrl/database-functions.php"
+      "src/utils/tagVideoThroughUrl/database-functions.php"
     ]
   },
   "authors": [

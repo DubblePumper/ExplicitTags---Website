@@ -4,21 +4,27 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: #0d0d0d;
+    background-color: #0d0d0d;
     display: flex;
-    align-items: center;
     justify-content: center;
+    align-items: center;
     z-index: 9999;
     transition: opacity 0.5s ease;
 }
-#preloader .spinner {
-    border: 8px solid rgba(255,255,255,0.1);
-    border-top: 8px solid #40a6ea;
-    border-radius: 50%;
-    width: 60px;
-    height: 60px;
-    animation: spin 1s linear infinite;
+
+#preloader.fade-out {
+    opacity: 0;
 }
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 4px solid rgba(64, 166, 234, 0.1);
+    border-top-color: #40a6ea;
+    animation: spin 1s infinite linear;
+}
+
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }

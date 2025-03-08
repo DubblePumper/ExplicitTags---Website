@@ -1,8 +1,15 @@
 <?php
+
 /**
  * This file includes all the necessary files for the application.
  * It's used as a single entry point to include all required files.
  */
+
+// Remove any whitespace or newlines before opening PHP tag
+// Start output buffering if not already started
+
+ob_start();
+
 
 // Check if the file is accessed directly
 if (!defined('BASE_PATH')) {
@@ -28,12 +35,6 @@ if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
 
-// Remove any whitespace or newlines before opening PHP tag
-// Start output buffering if not already started
-if (!ob_get_level()) {
-    ob_start();
-}
-
 // Set cache control headers
 header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Cache-Control: post-check=0, pre-check=0", false);
@@ -46,22 +47,26 @@ if (file_exists(__DIR__ . '/head.php')) {
 }
 
 // Function to check if headers have been sent
-function canSendHeaders() {
+function canSendHeaders()
+{
     return !headers_sent();
 }
 
 // Function to buffer output and delay header sending
-function buffer_callback($buffer) {
+function buffer_callback($buffer)
+{
     global $buffer_output;
     $buffer_output = $buffer;
     return '';
 }
 
 // Function to flush the buffered output
-function flush_buffered_output() {
+function flush_buffered_output()
+{
     global $buffer_output;
     if (isset($buffer_output)) {
         echo $buffer_output;
     }
 }
-?>
+
+ob_end_flush();

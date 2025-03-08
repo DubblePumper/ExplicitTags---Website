@@ -1,5 +1,26 @@
 <?php
-// Remove any whitespace or output before opening PHP tag
+// No output before this PHP tag - not even whitespace
+if (!defined('BASE_PATH')) {
+    define('BASE_PATH', dirname(__DIR__, 2));
+}
+
+// Get page title based on current URL
+$currentPage = basename($_SERVER['PHP_SELF'], '.php');
+$pageTitle = 'ExplicitTags';
+switch ($currentPage) {
+    case 'index':
+        $pageTitle = 'ExplicitTags - Home';
+        break;
+    case 'tag':
+        $pageTitle = 'ExplicitTags - Tag Videos';
+        break;
+    case 'search':
+        $pageTitle = 'ExplicitTags - Search Videos';
+        break;
+    case 'about':
+        $pageTitle = 'ExplicitTags - About Us';
+        break;
+}
 
 // Check if we need to buffer output in files that include head.php
 if (!ob_get_level()) {
@@ -7,7 +28,6 @@ if (!ob_get_level()) {
 }
 
 // Define default values
-$pageTitle = isset($pageTitle) ? $pageTitle : "ExplicitTags - Adult Video AI Analysis";
 $pageDescription = isset($pageDescription) ? $pageDescription : "Upload your adult videos and our AI will identify performers and tags";
 $pageKeywords = isset($pageKeywords) ? $pageKeywords : "adult, video analysis, AI identification, porn tags, performer recognition";
 ?>
@@ -132,8 +152,8 @@ $pageKeywords = isset($pageKeywords) ? $pageKeywords : "adult, video analysis, A
     <meta name="msapplication-TileImage" content="/assets/images/icons/mstile-144x144.png">
 
     <!-- Preloader CSS -->
-    <link rel="stylesheet" type="text/css" href="/assets/css/preloader.css">
+    <link rel="stylesheet" type="text/css" href="/assets/css/preloader.css?v=<?php echo time(); ?>">
 
-    <!-- Preloader JS -->
-    <script src="/assets/js/preloader.js"></script>
+    <!-- Load preloader script early -->
+    <script src="/assets/js/preloader.js?v=<?php echo time(); ?>"></script>
 </head>

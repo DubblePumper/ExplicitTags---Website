@@ -1,5 +1,11 @@
 <?php
-require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/config.php';
+// Define base path
+if (!defined('BASE_PATH')) {
+    define('BASE_PATH', dirname(__DIR__, 2));
+}
+
+// Include database functionality
+require_once BASE_PATH . '/config/config.php';
 
 header('Content-Type: text/event-stream');
 header('Cache-Control: no-cache');
@@ -69,7 +75,11 @@ try {
 
             // Filter out any empty or invalid URLs
             $imageUrls = array_filter($imageUrls, function($url) {
-                return !empty($url) && strpos($url, '.jpg') !== false;
+                return !empty($url) && (
+                    strpos($url, '.jpg') !== false || 
+                    strpos($url, '.jpeg') !== false || 
+                    strpos($url, '.png') !== false
+                );
             });
 
             $performer['image_urls'] = array_values($imageUrls);
@@ -83,8 +93,8 @@ try {
     }
 
 } catch (Exception $e) {
-    error_log("Performer Detail SSE Error: " . $e->getMessage());
-    sendSSE('error', ['error' => 'Error fetching performer details']);
+    error_log("Performer Detail SSE Error: " . $e->getMessage() . "\n" . $e->getTraceAsString());
+    sendSSE('error', ['error' => 'Error fetching performer details', 'details' => $e->getMessage()]);
 }
 
 exit(0);

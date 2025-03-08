@@ -55,47 +55,49 @@ $processingLogger->pushHandler(new StreamHandler($logDir . '/video_processing.lo
  * @param string $url URL to extract viewkey from
  * @return string Extracted viewkey or '0' if not found
  */
-function extractViewkey($url) {
+function extractViewkey($url)
+{
     $viewkey = '0';
-    
+
     // Extract from common patterns
     if (preg_match('/[?&]viewkey=([^&]+)/', $url, $matches)) {
         $viewkey = $matches[1];
     } elseif (preg_match('/\/([a-z0-9]+)(?:\/|\.|$)/', $url, $matches)) {
         $viewkey = $matches[1];
     }
-    
+
     // Remove any invalid characters
     $viewkey = preg_replace('/[^a-z0-9_-]/', '', $viewkey);
-    
+
     return $viewkey ?: '0';
 }
 
 // Function to download video
-function downloadVideo($url, $downloadLogger, $uploadsDir, $videoId = null) {
+function downloadVideo($url, $downloadLogger, $uploadsDir, $videoId = null)
+{
     try {
         // Extract viewkey from URL
         $viewkey = extractViewkey($url);
-        
+
         // Configure youtube-dl
         $binPath = BASE_PATH . '/vendor/yt-dlp_linux';
         if (PHP_OS_FAMILY === 'Windows') {
             $binPath = BASE_PATH . '/vendor/yt-dlp.exe';
         }
-        
+
         $downloadLogger->info('Starting download process for URL: ' . $url);
         $downloadLogger->info('Using binary at: ' . $binPath);
-        
+
         if (!file_exists($binPath)) {
             throw new ExecutableNotFoundException('yt-dlp binary not found at: ' . $binPath);
         }
 
         // Generate unique ID part of filename
         $uniqueId = uniqid();
-        
+
         // Define custom filename format with extension placeholder: video_{$videoId}_{$viewkey}_{$uniqueId}.%(ext)s
         $customFileName = "video_{$videoId}_{$viewkey}_{$uniqueId}.%(ext)s";
-        
+
         $downloadLogger->info('Using custom filename format', [
             'format' => $customFileName,
             'video_id' => $videoId,
@@ -106,7 +108,7 @@ function downloadVideo($url, $downloadLogger, $uploadsDir, $videoId = null) {
         // Create YoutubeDl instance
         $youtubeDl = new YoutubeDl();
         $youtubeDl->setBinPath($binPath);
-        
+
         // Create options using fluent interface - CORRECT WAY TO SET DOWNLOAD PATH
         $options = Options::create()
             ->downloadPath($uploadsDir)     // Set download path first
@@ -115,30 +117,30 @@ function downloadVideo($url, $downloadLogger, $uploadsDir, $videoId = null) {
             ->noCheckCertificate(true)
             ->noPlaylist()
             ->url($url);
-        
+
         $downloadLogger->info('Starting download with options', [
-            'format' => 'best[height<=720]', 
+            'format' => 'best[height<=720]',
             'output' => $customFileName,
             'download_path' => $uploadsDir
         ]);
-        
+
         // Download the video
         $video = $youtubeDl->download($options);
-        
+
         // Get the video information
         $videos = $video->getVideos();
-        
+
         if (empty($videos)) {
             throw new YoutubeDlException('No videos were downloaded');
         }
-        
+
         $videoFilePath = $videos[0]->getFile();
-        
+
         // If file not found, try to find it by pattern
         if (!$videoFilePath || !file_exists($videoFilePath)) {
             $expectedFilePattern = $uploadsDir . "/video_{$videoId}_{$viewkey}_{$uniqueId}.*";
             $matchingFiles = glob($expectedFilePattern);
-            
+
             if (!empty($matchingFiles)) {
                 $videoFilePath = $matchingFiles[0];
             } else {
@@ -147,7 +149,7 @@ function downloadVideo($url, $downloadLogger, $uploadsDir, $videoId = null) {
                 if (!empty($files)) {
                     $latestFile = null;
                     $latestTime = 0;
-                    
+
                     foreach ($files as $file) {
                         $fileTime = filemtime($file);
                         if ($fileTime > $latestTime) {
@@ -155,14 +157,14 @@ function downloadVideo($url, $downloadLogger, $uploadsDir, $videoId = null) {
                             $latestFile = $file;
                         }
                     }
-                    
+
                     $videoFilePath = $latestFile;
                 }
             }
         }
-        
+
         $downloadLogger->info('Download completed successfully', ['file_path' => $videoFilePath]);
-        
+
         return [
             'success' => true,
             'file_path' => $videoFilePath,
@@ -206,13 +208,13 @@ $videoId = null;
 // Process form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $processingLogger->info('Received video processing request');
-    
+
     // Check if we have a URL or an uploaded file
     if (!empty($_POST['videoUrl'])) {
         // Process URL submission
         $videoUrl = filter_var($_POST['videoUrl'], FILTER_SANITIZE_URL);
         $processingLogger->info('Processing video URL: ' . $videoUrl);
-        
+
         // Validate the URL
         if (filter_var($videoUrl, FILTER_VALIDATE_URL)) {
             try {
@@ -223,9 +225,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'processing_status' => 'pending',
                     'user_ip' => $_SERVER['REMOTE_ADDR'] ?? null
                 ];
-                
+
                 // Insert into database
-                $pdo = getDBConnection();
+                $pdo = testDBConnection();
                 $stmt = $pdo->prepare("
                     INSERT INTO processed_videos 
                     (source_type, video_url, processing_status, user_ip, created_at, updated_at) 
@@ -237,27 +239,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ':processing_status' => $videoData['processing_status'],
                     ':user_ip' => $videoData['user_ip']
                 ]);
-                
+
                 $videoId = $pdo->lastInsertId();
-                
+
                 $processingLogger->info('Created database entry', ['video_id' => $videoId]);
-                
+
                 // Start the download process
                 updateVideoStatus($videoId, 'processing', 'Starting download...', 0);
-                
+
                 // Pass videoId to the downloadVideo function
                 $downloadResult = downloadVideo($videoUrl, $downloadLogger, $uploadsDir, $videoId);
-                
+
                 if ($downloadResult['success']) {
                     $videoFilePath = $downloadResult['file_path'];
                     $processingLogger->info('Video downloaded successfully', [
                         'video_id' => $videoId,
                         'file_path' => $videoFilePath
                     ]);
-                    
+
                     // Store viewkey in database along with file path
                     $viewkey = $downloadResult['viewkey'] ?? extractViewkey($videoUrl);
-                    
+
                     // Update database with file path
                     $stmt = $pdo->prepare("
                         UPDATE processed_videos 
@@ -273,7 +275,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         ':viewkey' => $viewkey,
                         ':id' => $videoId
                     ]);
-                    
+
                     $success = true;
                     $processingStatus = 'processing';
                     $statusMessage = 'Video downloaded. Starting AI analysis...';
@@ -283,7 +285,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'video_id' => $videoId,
                         'error' => $error
                     ]);
-                    
+
                     // Update database with error
                     updateVideoStatus($videoId, 'failed', $error, 0);
                 }
@@ -293,7 +295,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'message' => $e->getMessage(),
                     'trace' => $e->getTraceAsString()
                 ]);
-                
+
                 if (isset($videoId)) {
                     updateVideoStatus($videoId, 'failed', $error, 0);
                 }
@@ -305,16 +307,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (!empty($_FILES['videoFile']) && $_FILES['videoFile']['error'] === UPLOAD_ERR_OK) {
         // Process file upload
         $processingLogger->info('Processing uploaded video file');
-        
+
         try {
             $uploadedFile = $_FILES['videoFile'];
             $tmpName = $uploadedFile['tmp_name'];
             $originalName = $uploadedFile['name'];
-            
+
             // Check file type
             $allowedTypes = ['video/mp4', 'video/webm', 'video/avi', 'video/quicktime'];
             $fileType = mime_content_type($tmpName);
-            
+
             if (in_array($fileType, $allowedTypes)) {
                 // Save to database first to get an ID
                 $videoData = [
@@ -322,9 +324,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'processing_status' => 'pending',
                     'user_ip' => $_SERVER['REMOTE_ADDR'] ?? null
                 ];
-                
+
                 // Insert into database
-                $pdo = getDBConnection();
+                $pdo = testDBConnection();
                 $stmt = $pdo->prepare("
                     INSERT INTO processed_videos 
                     (source_type, processing_status, user_ip, created_at, updated_at) 
@@ -335,27 +337,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ':processing_status' => $videoData['processing_status'],
                     ':user_ip' => $videoData['user_ip']
                 ]);
-                
+
                 $videoId = $pdo->lastInsertId();
-                
+
                 // Generate a unique filename using the required format
                 $fileExtension = pathinfo($originalName, PATHINFO_EXTENSION);
                 $uniqueId = uniqid();
                 $newFilename = "video_{$videoId}_0_{$uniqueId}.{$fileExtension}";
                 $targetFilePath = $uploadsDir . '/' . $newFilename;
-                
+
                 // Ensure uploads directory exists
                 if (!file_exists($uploadsDir)) {
                     mkdir($uploadsDir, 0755, true);
                 }
-                
+
                 // Move uploaded file
                 if (move_uploaded_file($tmpName, $targetFilePath)) {
                     $processingLogger->info('File uploaded successfully', [
                         'original_name' => $originalName,
                         'saved_as' => $targetFilePath
                     ]);
-                    
+
                     // Update database with file path
                     $stmt = $pdo->prepare("
                         UPDATE processed_videos 
@@ -370,11 +372,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         ':source_path' => $targetFilePath,
                         ':id' => $videoId
                     ]);
-                    
+
                     $success = true;
                     $processingStatus = 'processing';
                     $statusMessage = 'Upload complete. Starting AI analysis...';
-                    
+
                     $processingLogger->info('Created database entry for uploaded file', ['video_id' => $videoId]);
                 } else {
                     $error = "Failed to move uploaded file.";
@@ -382,7 +384,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'from' => $tmpName,
                         'to' => $targetFilePath
                     ]);
-                    
+
                     // Update database with error
                     updateVideoStatus($videoId, 'failed', $error, 0);
                 }
@@ -399,7 +401,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-            
+
             if (isset($videoId)) {
                 updateVideoStatus($videoId, 'failed', $error, 0);
             }
@@ -412,14 +414,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Check status of existing video
     $videoId = (int)$_GET['id'];
     $processingLogger->info('Checking status for video ID: ' . $videoId);
-    
+
     $videoData = getVideoTask($videoId);
-    
+
     if ($videoData) {
         $processingStatus = $videoData['processing_status'] ?? 'pending';
         $statusMessage = $videoData['status_message'] ?? '';
         $success = true;
-        
+
         $processingLogger->info('Retrieved video status', [
             'video_id' => $videoId,
             'status' => $processingStatus,
@@ -465,7 +467,7 @@ if (ob_get_length()) ob_clean();
                     </svg>
                     <h2 class="text-xl md:text-2xl font-bold text-secondary mb-2">Video Received Successfully!</h2>
                     <p class="text-TextWhite mb-6">Your video is now being processed by our AI analysis system.</p>
-                    
+
                     <!-- Processing status indicator -->
                     <div class="mb-8">
                         <div class="relative pt-1">
@@ -480,7 +482,7 @@ if (ob_get_length()) ob_clean();
                             </div>
                         </div>
                         <p id="status-message" class="text-gray-300 mt-3">
-                            <?php 
+                            <?php
                             if ($processingStatus === 'pending') {
                                 echo "Waiting to start processing...";
                             } elseif ($processingStatus === 'processing') {
@@ -493,9 +495,9 @@ if (ob_get_length()) ob_clean();
                             ?>
                         </p>
                     </div>
-                    
+
                     <input type="hidden" id="video-id" value="<?php echo $videoId; ?>">
-                    
+
                     <!-- Result will appear here when ready -->
                     <div id="result-container" class="hidden mb-6">
                         <div class="bg-gray-800/50 border border-gray-700 p-4 rounded-lg">
@@ -505,7 +507,7 @@ if (ob_get_length()) ob_clean();
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="mt-6 flex flex-col md:flex-row justify-center gap-4">
                         <a href="/tag" class="w-full md:w-auto inline-flex items-center justify-center px-6 py-2 bg-secondaryDarker/30 text-secondary border border-secondary rounded-md hover:bg-secondary/20 transition-all duration-300">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -519,9 +521,10 @@ if (ob_get_length()) ob_clean();
         <?php else: ?>
             <!-- Redirect to upload page if accessed directly -->
             <?php
-            // Use proper redirection with clean buffer
-            ob_clean();
+            ob_clean(); // Clear any previous output
+            ob_start();
             header("Location: /tag");
+            ob_end_flush();
             exit;
             ?>
         <?php endif; ?>
@@ -529,131 +532,131 @@ if (ob_get_length()) ob_clean();
 </div>
 
 <?php if ($success): ?>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const videoId = document.getElementById('video-id').value;
-        const progressBar = document.getElementById('progress-bar');
-        const statusMessage = document.getElementById('status-message');
-        const resultContainer = document.getElementById('result-container');
-        const resultContent = document.getElementById('result-content');
-        
-        let checkStatusInterval;
-        let failedAttempts = 0;
-        const maxFailedAttempts = 5;
-        
-        // Function to check processing status
-        function checkStatus() {
-            fetch(`/api/check-video-status?id=${videoId}`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    // Reset failed attempts counter on successful response
-                    failedAttempts = 0;
-                    
-                    // Update progress based on processing stage
-                    let progress = 0;
-                    
-                    if (data.processing_status === 'pending') {
-                        progress = 10;
-                    } else if (data.processing_status === 'processing') {
-                        // If download_progress is available, use it to calculate overall progress
-                        if (data.download_progress !== null) {
-                            // Scale download progress from 0-100 to 10-50
-                            progress = 10 + (data.download_progress * 0.4);
-                        } else {
-                            // Default progress for processing state
-                            progress = 50;
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const videoId = document.getElementById('video-id').value;
+            const progressBar = document.getElementById('progress-bar');
+            const statusMessage = document.getElementById('status-message');
+            const resultContainer = document.getElementById('result-container');
+            const resultContent = document.getElementById('result-content');
+
+            let checkStatusInterval;
+            let failedAttempts = 0;
+            const maxFailedAttempts = 5;
+
+            // Function to check processing status
+            function checkStatus() {
+                fetch(`/api/check-video-status?id=${videoId}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
                         }
-                    } else if (data.processing_status === 'completed') {
-                        progress = 100;
-                        
-                        // Display results if available
-                        if (data.result_data) {
-                            resultContainer.classList.remove('hidden');
-                            resultContent.innerHTML = formatResults(data.result_data);
+                        return response.json();
+                    })
+                    .then(data => {
+                        // Reset failed attempts counter on successful response
+                        failedAttempts = 0;
+
+                        // Update progress based on processing stage
+                        let progress = 0;
+
+                        if (data.processing_status === 'pending') {
+                            progress = 10;
+                        } else if (data.processing_status === 'processing') {
+                            // If download_progress is available, use it to calculate overall progress
+                            if (data.download_progress !== null) {
+                                // Scale download progress from 0-100 to 10-50
+                                progress = 10 + (data.download_progress * 0.4);
+                            } else {
+                                // Default progress for processing state
+                                progress = 50;
+                            }
+                        } else if (data.processing_status === 'completed') {
+                            progress = 100;
+
+                            // Display results if available
+                            if (data.result_data) {
+                                resultContainer.classList.remove('hidden');
+                                resultContent.innerHTML = formatResults(data.result_data);
+                            }
+
+                            // Stop checking status
+                            clearInterval(checkStatusInterval);
+                        } else if (data.processing_status === 'failed') {
+                            // Show error message and stop checking
+                            statusMessage.textContent = data.status_message || 'Processing failed';
+                            statusMessage.classList.add('text-red-400');
+                            clearInterval(checkStatusInterval);
+                            return;
                         }
-                        
-                        // Stop checking status
-                        clearInterval(checkStatusInterval);
-                    } else if (data.processing_status === 'failed') {
-                        // Show error message and stop checking
-                        statusMessage.textContent = data.status_message || 'Processing failed';
-                        statusMessage.classList.add('text-red-400');
-                        clearInterval(checkStatusInterval);
-                        return;
-                    }
-                    
-                    // Update progress bar
-                    progressBar.style.width = `${progress}%`;
-                    
-                    // Update status message
-                    if (data.status_message) {
-                        statusMessage.textContent = data.status_message;
-                    }
-                })
-                .catch(error => {
-                    console.error('Error checking status:', error);
-                    
-                    // Increment failed attempts
-                    failedAttempts++;
-                    
-                    // If too many failures, stop checking
-                    if (failedAttempts >= maxFailedAttempts) {
-                        statusMessage.textContent = 'Error checking status. Please refresh the page.';
-                        statusMessage.classList.add('text-red-400');
-                        clearInterval(checkStatusInterval);
-                    }
-                });
-        }
-        
-        // Format results for display
-        function formatResults(data) {
-            if (!data) return '<p>No results available</p>';
-            
-            // Build HTML for results
-            let html = '<div class="space-y-4">';
-            
-            // Display performers if available
-            if (data.performers && data.performers.length > 0) {
-                html += `<div class="mb-4">
+
+                        // Update progress bar
+                        progressBar.style.width = `${progress}%`;
+
+                        // Update status message
+                        if (data.status_message) {
+                            statusMessage.textContent = data.status_message;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error checking status:', error);
+
+                        // Increment failed attempts
+                        failedAttempts++;
+
+                        // If too many failures, stop checking
+                        if (failedAttempts >= maxFailedAttempts) {
+                            statusMessage.textContent = 'Error checking status. Please refresh the page.';
+                            statusMessage.classList.add('text-red-400');
+                            clearInterval(checkStatusInterval);
+                        }
+                    });
+            }
+
+            // Format results for display
+            function formatResults(data) {
+                if (!data) return '<p>No results available</p>';
+
+                // Build HTML for results
+                let html = '<div class="space-y-4">';
+
+                // Display performers if available
+                if (data.performers && data.performers.length > 0) {
+                    html += `<div class="mb-4">
                     <h4 class="font-medium text-secondary mb-2">Detected Performers:</h4>
                     <div class="flex flex-wrap gap-2">`;
-                
-                data.performers.forEach(performer => {
-                    html += `<span class="px-2 py-1 bg-secondary/20 text-secondary rounded-full text-xs">
+
+                    data.performers.forEach(performer => {
+                        html += `<span class="px-2 py-1 bg-secondary/20 text-secondary rounded-full text-xs">
                         ${performer.name} (${performer.confidence.toFixed(2)}%)
                     </span>`;
-                });
-                
-                html += `</div></div>`;
-            }
-            
-            // Display tags if available
-            if (data.tags && data.tags.length > 0) {
-                html += `<div>
+                    });
+
+                    html += `</div></div>`;
+                }
+
+                // Display tags if available
+                if (data.tags && data.tags.length > 0) {
+                    html += `<div>
                     <h4 class="font-medium text-secondary mb-2">Content Tags:</h4>
                     <div class="flex flex-wrap gap-2">`;
-                
-                data.tags.forEach(tag => {
-                    html += `<span class="px-2 py-1 bg-tertery/20 text-tertery rounded-full text-xs">
+
+                    data.tags.forEach(tag => {
+                        html += `<span class="px-2 py-1 bg-tertery/20 text-tertery rounded-full text-xs">
                         ${tag.name} (${tag.confidence.toFixed(2)}%)
                     </span>`;
-                });
-                
-                html += `</div></div>`;
+                    });
+
+                    html += `</div></div>`;
+                }
+
+                html += '</div>';
+                return html;
             }
-            
-            html += '</div>';
-            return html;
-        }
-        
-        // Start checking status periodically
-        checkStatus(); // Check immediately once
-        checkStatusInterval = setInterval(checkStatus, 3000); // Then check every 3 seconds
-    });
-</script>
+
+            // Start checking status periodically
+            checkStatus(); // Check immediately once
+            checkStatusInterval = setInterval(checkStatus, 3000); // Then check every 3 seconds
+        });
+    </script>
 <?php endif; ?>

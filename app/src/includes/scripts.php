@@ -1,10 +1,37 @@
+<?php if (!defined('BASE_PATH')) exit; ?>
 <!-- jQuery -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <!-- AOS Animation Library -->
 <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
 <script>
-    AOS.init();
+    // Initialize AOS animation
+    AOS.init({
+        once: true,
+        duration: 800
+    });
+    
+    // Preloader
+    window.addEventListener('load', function() {
+        const preloader = document.getElementById('preloader');
+        if (preloader) {
+            preloader.style.opacity = '0';
+            setTimeout(() => {
+                preloader.style.display = 'none';
+            }, 500);
+        }
+    });
+
+    // Additional preloader hide logic (backup)
+    document.addEventListener('DOMContentLoaded', function() {
+        const preloader = document.getElementById('preloader');
+        if (preloader && preloader.style.display !== 'none') {
+            preloader.classList.add('fade-out');
+            setTimeout(() => {
+                preloader.style.display = 'none';
+            }, 500);
+        }
+    });
 </script>
 
 <!-- Common JavaScript -->
@@ -24,4 +51,5 @@ if (file_exists(dirname($_SERVER['DOCUMENT_ROOT']) . "/public/assets/js/{$curren
     document.addEventListener('DOMContentLoaded', function() {
         console.log('Page loaded successfully!');
     });
+
 </script>

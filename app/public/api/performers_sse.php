@@ -1,14 +1,20 @@
 <?php
-require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/config.php';
+// Define base path
+if (!defined('BASE_PATH')) {
+    define('BASE_PATH', dirname(__DIR__, 2));
+}
+
+// Include database functionality
+require_once BASE_PATH . '/config/config.php';
 
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
 ini_set('max_execution_time', 0);
 
-// Maak de output buffer leeg
+// Clear output buffer
 while (ob_get_level()) ob_end_clean();
 
-// Headers voor SSE
+// Headers for SSE
 header('Content-Type: text/event-stream');
 header('Cache-Control: no-cache');
 header('X-Accel-Buffering: no');
@@ -17,7 +23,7 @@ header('Access-Control-Allow-Methods: GET');
 
 echo "retry: 3000\n\n";
 
-// SSE functie
+// SSE function
 function sendSSE($event, $data) {
     echo "id: " . time() . "\n";
     echo "event: {$event}\n";
@@ -25,7 +31,7 @@ function sendSSE($event, $data) {
     flush();
 }
 
-// Fuzzy matching functie
+// Fuzzy matching function
 function calculateFuzzyScore($search, $name) {
     $search = strtolower(trim($search));
     $name = strtolower(trim($name));
@@ -50,9 +56,9 @@ function calculateFuzzyScore($search, $name) {
     $normalizedName = $normalizeStr($name);
     if ($normalizedSearch === $normalizedName) return 99.0;
 
-    // Phonetic matches
-    if (metaphone($search) === metaphone($name)) return 95.0;
-    if (soundex($search) === soundex($name)) return 90.0;
+    // Phonetic matches - check if function exists (for PHP compatibility)
+    if (function_exists('metaphone') && metaphone($search) === metaphone($name)) return 95.0;
+    if (function_exists('soundex') && soundex($search) === soundex($name)) return 90.0;
 
     // Exact word matches at start of name
     $words = explode(' ', $name);
@@ -124,15 +130,19 @@ function calculateFuzzyScore($search, $name) {
 try {
     sendSSE('ping', ['status' => 'connected']);
 
+    // Connect to database
     $pdo = testDBConnection();
     if (!$pdo) {
         throw new Exception('Database connection failed');
     }
 
-    $search = urldecode(filter_input(INPUT_GET, 'search', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? '');
-    $gender = filter_input(INPUT_GET, 'gender', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? '';
+    // Get search parameters and sanitize
+    $search = isset($_GET['search']) ? filter_var($_GET['search'], FILTER_SANITIZE_FULL_SPECIAL_CHARS) : '';
+    $gender = isset($_GET['gender']) ? filter_var($_GET['gender'], FILTER_SANITIZE_FULL_SPECIAL_CHARS) : '';
+    
+    $search = urldecode($search);
 
-    // SQL-query opbouwen met SOUNDEX ondersteuning
+    // Build the SQL query with SOUNDEX support
     $query = "SELECT p.id AS performer_id, p.name, p.gender, 
               (SELECT image_url FROM performer_images WHERE performer_id = p.id LIMIT 1) AS image_url
               FROM performers p";
@@ -145,14 +155,9 @@ try {
     }
 
     if (!empty($search)) {
-        $conditions[] = "(
-            LOWER(p.name) LIKE LOWER(:searchWild) 
-            OR SOUNDEX(p.name) = SOUNDEX(:search)
-            OR LOWER(p.name) LIKE LOWER(:searchReplace)
-        )";
+        // Simpler, more reliable search condition
+        $conditions[] = "LOWER(p.name) LIKE LOWER(:searchWild)";
         $params[':searchWild'] = '%' . $search . '%';
-        $params[':search'] = $search;
-        $params[':searchReplace'] = str_replace(['j', 'y'], ['g', 'i'], '%' . $search . '%');
     }
 
     if (!empty($conditions)) {
@@ -161,26 +166,28 @@ try {
 
     $query .= " GROUP BY p.id, p.name, p.gender LIMIT 30";
 
-    $stmt = $pdo->prepare($query);
-    if (!$stmt->execute($params)) {
-        throw new Exception('Query execution failed');
+    // Try executing the query
+    try {
+        $stmt = $pdo->prepare($query);
+        $stmt->execute($params);
+        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        throw new Exception('Database query failed: ' . $e->getMessage());
     }
 
-    $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    // Fuzzy matching toepassen
+    // Fuzzy matching if search term provided
     if (!empty($search)) {
         foreach ($results as &$result) {
             $result['similarity'] = calculateFuzzyScore($search, $result['name']);
         }
 
         // Stricter filtering and better sorting
-        $results = array_filter($results, fn($result) => $result['similarity'] > 60.0);
+        $results = array_filter($results, fn($result) => $result['similarity'] > 50.0);
         usort($results, fn($a, $b) => $b['similarity'] <=> $a['similarity']);
         $results = array_slice($results, 0, 15);
     }
 
-    // Duplicaten verwijderen
+    // Remove duplicates
     $seen = [];
     $results = array_values(array_filter($results, function($result) use (&$seen) {
         $nameKey = strtolower(trim($result['name']));
@@ -191,7 +198,7 @@ try {
         return true;
     }));
 
-    // Image URL fixen
+    // Fix image URLs
     array_walk($results, function (&$result) {
         if (!empty($result['image_url'])) {
             $result['image_url'] = str_replace(['E:\\github repos\\porn_ai_analyser\\app\\datasets\\pornstar_images', '\\'], ['', '/'], $result['image_url']);
@@ -206,16 +213,20 @@ try {
         }
     });
 
-    sendSSE('performers', array_map(fn($result) => [
+    // Send the results
+    $formattedResults = array_map(fn($result) => [
         'performer_id' => $result['performer_id'],
         'name'         => $result['name'],
         'gender'       => $result['gender'],
         'image_url'    => $result['image_url']
-    ], $results));
+    ], $results);
+    
+    sendSSE('performers', $formattedResults);
 
     exit(0);
 } catch (Exception $e) {
-    error_log("SSE Error: " . $e->getMessage());
+    // Log error and send error event
+    error_log("SSE Error: " . $e->getMessage() . "\n" . $e->getTraceAsString());
     sendSSE('error', ['error' => 'Search service error', 'details' => $e->getMessage()]);
     exit(1);
 }

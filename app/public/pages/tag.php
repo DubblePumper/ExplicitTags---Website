@@ -3,10 +3,10 @@
 define('BASE_PATH', dirname(__DIR__, 2));
 
 // Include necessary files from the new structure
-require_once BASE_PATH . '/src/Includes/include-all.php';
+require_once BASE_PATH . '/src/includes/include-all.php';
 
 // Update path to use the new structure
-require_once BASE_PATH . '/src/Utils/tagVideoThroughUrl/database-functions.php';
+require_once BASE_PATH . '/src/utils/tagVideoThroughUrl/database-functions.php';
 
 // Get a random gradient class for styling
 $gradientClass = getRandomGradientClass(true);
@@ -129,7 +129,7 @@ if ($redirect && $videoId) {
         </div>
     </main>
     
-    <?php include_once BASE_PATH . '/src/Includes/scripts.php'; ?>
+    <?php include_once BASE_PATH . '/src/includes/scripts.php'; ?>
 
     <!-- Add global variables -->
     <script>

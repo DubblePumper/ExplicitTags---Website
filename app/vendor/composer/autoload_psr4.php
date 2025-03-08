@@ -7,8 +7,8 @@ $baseDir = dirname($vendorDir);
 
 return array(
     'YoutubeDl\\' => array($vendorDir . '/norkunas/youtube-dl-php/src'),
-    'Utils\\Services\\' => array($baseDir . '/src/Utils/Services'),
-    'Utils\\' => array($baseDir . '/src/Utils'),
+    'Utils\\Services\\' => array($baseDir . '/src/utils/Services'),
+    'Utils\\' => array($baseDir . '/src/utils'),
     'Symfony\\Polyfill\\Php80\\' => array($vendorDir . '/symfony/polyfill-php80'),
     'Symfony\\Polyfill\\Mbstring\\' => array($vendorDir . '/symfony/polyfill-mbstring'),
     'Symfony\\Polyfill\\Ctype\\' => array($vendorDir . '/symfony/polyfill-ctype'),
