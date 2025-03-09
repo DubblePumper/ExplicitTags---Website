@@ -56,3 +56,8 @@
 [2025-03-06T20:53:15.046497+00:00] video_downloader.INFO: Using binary at: /var/www/html/vendor/yt-dlp_linux [] []
 [2025-03-06T20:53:15.047764+00:00] video_downloader.INFO: Using custom filename format {"format":"video_87_ph62aab0917d335_67ca0b3b0ba8a.%(ext)s","video_id":"87","viewkey":"ph62aab0917d335","unique_id":"67ca0b3b0ba8a"} []
 [2025-03-06T20:53:15.152429+00:00] video_downloader.INFO: Starting download with options {"format":"best[height<=720]","output":"video_87_ph62aab0917d335_67ca0b3b0ba8a.%(ext)s","download_path":"/var/www/html/storage/uploads/videos"} []
+[2025-03-09T08:34:25.467559+00:00] video_downloader.INFO: Starting download process for URL: https://nl.pornhub.com/view_video.php?viewkey=ph5d70003f4a4fd [] []
+[2025-03-09T08:34:25.470189+00:00] video_downloader.INFO: Using binary at: /var/www/html/vendor/yt-dlp_linux [] []
+[2025-03-09T08:34:25.471502+00:00] video_downloader.INFO: Using custom filename format {"format":"video_88_ph5d70003f4a4fd_67cd5291731c4.%(ext)s","video_id":"88","viewkey":"ph5d70003f4a4fd","unique_id":"67cd5291731c4"} []
+[2025-03-09T08:34:25.567700+00:00] video_downloader.INFO: Starting download with options {"format":"best[height<=720]","output":"video_88_ph5d70003f4a4fd_67cd5291731c4.%(ext)s","download_path":"/var/www/html/storage/uploads/videos"} []
+[2025-03-09T08:35:02.334367+00:00] video_downloader.INFO: Download completed successfully {"file_path":{"SplFileInfo":"/var/www/html/storage/uploads/videos/video_88_ph5d70003f4a4fd_67cd5291731c4.mp4"}} []

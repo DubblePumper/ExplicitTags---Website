@@ -2,8 +2,12 @@ FROM php:apache
 
 # Installeer benodigde PHP extensies en werk bij
 RUN apt-get update && apt-get upgrade -y \
+    && apt-get install -y --no-install-recommends \
+       libicu-dev \
     && docker-php-ext-install pdo pdo_mysql mysqli \
-    && a2enmod rewrite headers
+    && a2enmod rewrite headers \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Set document root to public directory
 RUN sed -i 's|DocumentRoot /var/www/html|DocumentRoot /var/www/html/public|' /etc/apache2/sites-available/000-default.conf \

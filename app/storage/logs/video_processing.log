@@ -51,3 +51,7 @@
 [2025-03-06T20:53:14.703693+00:00] video_processing.INFO: Received video processing request [] []
 [2025-03-06T20:53:14.763421+00:00] video_processing.INFO: Processing video URL: https://nl.pornhub.com/view_video.php?viewkey=ph62aab0917d335 [] []
 [2025-03-06T20:53:14.914154+00:00] video_processing.INFO: Created database entry {"video_id":"87"} []
+[2025-03-09T08:34:25.093891+00:00] video_processing.INFO: Received video processing request [] []
+[2025-03-09T08:34:25.153560+00:00] video_processing.INFO: Processing video URL: https://nl.pornhub.com/view_video.php?viewkey=ph5d70003f4a4fd [] []
+[2025-03-09T08:34:25.323790+00:00] video_processing.INFO: Created database entry {"video_id":"88"} []
+[2025-03-09T08:35:02.334584+00:00] video_processing.INFO: Video downloaded successfully {"video_id":"88","file_path":{"SplFileInfo":"/var/www/html/storage/uploads/videos/video_88_ph5d70003f4a4fd_67cd5291731c4.mp4"}} []
