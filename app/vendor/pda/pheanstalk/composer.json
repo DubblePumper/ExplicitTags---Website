@@ -1,0 +1,63 @@
+{
+    "name": "pda/pheanstalk",
+    "type": "library",
+    "description": "PHP client for beanstalkd queue",
+    "keywords": ["beanstalkd"],
+    "homepage": "https://github.com/pheanstalk/pheanstalk",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Paul Annesley",
+            "email": "paul@annesley.cc",
+            "homepage": "http://paul.annesley.cc/",
+            "role": "Developer"
+        },
+        {
+            "name": "Sam Mousa",
+            "email": "sam@mousa.nl",
+            "role": "Maintainer"
+        }
+    ],
+    "require": {
+        "php": ">=8.3.0",
+        "ext-mbstring": "*"
+    },
+    "suggest": {
+        "ext-sockets": "Socket implementation works best for long running processes"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^12",
+        "symplify/easy-coding-standard": "^12",
+        "phpstan/phpstan": "^2",
+        "captainhook/plugin-composer": "^5.3",
+        "ramsey/conventional-commits": "^1.2",
+        "phpstan/extension-installer": "^1.1",
+        "phpstan/phpstan-phpunit": "^2",
+        "phpstan/phpstan-strict-rules": "^2",
+        "rector/rector": "^2.0"
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Pheanstalk\\Tests\\": "tests/"
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Pheanstalk\\": "src/"
+        }
+    },
+    "scripts": {
+        "phpunit": "docker compose run --rm phpunit",
+        "phpunit-native": "phpunit --config phpunit.xml.dist",
+        "test": [
+            "@phpunit"
+        ],
+        "phpdoc": "docker run --rm "
+    },
+    "config": {
+        "allow-plugins": {
+            "captainhook/plugin-composer": true,
+            "phpstan/extension-installer": true
+        }
+    }
+}

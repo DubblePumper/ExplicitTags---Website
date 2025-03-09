@@ -1,0 +1,18 @@
+{
+  "branches": [
+    {
+      "name": "master"
+    },
+    {
+      "name": "v5",
+      "range": "5.x"
+    }
+  ],
+  "plugins": [
+    ["@semantic-release/commit-analyzer", {
+      "preset": "conventionalcommits"
+    }],
+    "@semantic-release/release-notes-generator",
+    "@semantic-release/github"
+  ]
+}

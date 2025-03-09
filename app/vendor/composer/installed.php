@@ -3,7 +3,7 @@
         'name' => 'sander/ai_analyser_website',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => '4d99e7320d77b941dab9b25f020c593c026db48a',
+        'reference' => 'eb236125ab63143453ca91007701277b074d186a',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -37,6 +37,15 @@
             'aliases' => array(
                 0 => '2.0.x-dev',
             ),
+            'dev_requirement' => false,
+        ),
+        'pda/pheanstalk' => array(
+            'pretty_version' => 'v6.0.1',
+            'version' => '6.0.1.0',
+            'reference' => '4afcac8137457345b3a0a042732e9323696cf834',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../pda/pheanstalk',
+            'aliases' => array(),
             'dev_requirement' => false,
         ),
         'php-ffmpeg/php-ffmpeg' => array(
@@ -96,7 +105,7 @@
         'sander/ai_analyser_website' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => '4d99e7320d77b941dab9b25f020c593c026db48a',
+            'reference' => 'eb236125ab63143453ca91007701277b074d186a',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
