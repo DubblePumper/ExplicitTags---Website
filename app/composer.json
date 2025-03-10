@@ -5,14 +5,14 @@
   "name": "sander/ai_analyser_website",
   "autoload": {
     "psr-4": {
-      "Sander\\AiAnalyserWebsite\\": "src/",
-      "Utils\\Services\\": "src/utils/Services/",
-      "Utils\\": "src/utils/"
+        "Sander\\AiAnalyserWebsite\\": "src/",
+        "utils\\Services\\": "src/utils/Services/",
+        "utils\\": "src/utils/"
     },
     "files": [
-      "src/utils/tagVideoThroughUrl/database-functions.php"
+        "src/utils/tagVideoThroughUrl/database-functions.php"
     ]
-  },
+},
   "authors": [
     {
       "name": "DubblePumper",
@@ -23,8 +23,6 @@
     "norkunas/youtube-dl-php": "dev-master",
     "symfony/process": "^7.2",
     "php-ffmpeg/php-ffmpeg": "^1.3",
-    "monolog/monolog": "^3.8",
-    "symfony/polyfill-mbstring": "^1.31",
-    "pda/pheanstalk": "^6.0"
+    "monolog/monolog": "^3.8"
   }
 }

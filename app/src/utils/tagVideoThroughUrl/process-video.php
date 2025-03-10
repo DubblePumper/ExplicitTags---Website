@@ -15,7 +15,7 @@ ini_set('display_errors', 1);
 
 // Include necessary files
 require_once BASE_PATH . '/vendor/autoload.php';
-require_once BASE_PATH . '/src/Utils/tagVideoThroughUrl/database-functions.php';
+require_once BASE_PATH . '/src/utils/tagVideoThroughUrl/database-functions.php';
 
 // Set up custom logging
 use Monolog\Level;
